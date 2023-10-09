@@ -1,5 +1,11 @@
 # MNN
 
+Notwendig vorher in Shell:
+
+```bash
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib";
+```
+
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alex.github.io/MNN.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alex.github.io/MNN.jl/dev/)
 [![Build Status](https://github.com/alex/MNN.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/alex/MNN.jl/actions/workflows/CI.yml?query=branch%3Amain)
