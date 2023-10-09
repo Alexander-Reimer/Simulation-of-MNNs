@@ -1,0 +1,13 @@
+name = "MNN"
+uuid = "def1e268-d857-4b35-a8fd-9c5d97fcf4d0"
+authors = ["Alexander Reimer <alexander.reimer2357@gmail.com>", "Matteo Friedrich <matteo.r.friedrich@gmail.com>"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.8"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
