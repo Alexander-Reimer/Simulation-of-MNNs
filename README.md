@@ -12,7 +12,7 @@ Notwendig vorher in Shell:
 LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib";
 ```
 
-# Zusammenfassung
+## Zusammenfassung
 
 Wir wollen uns mit dem neuen, vergleichsweise wenig erforschtem Bereich der Mechanical Neural Networks, kurz MNNs, beschäftigen. Während die bisherige Forschung sich auf die technische, physische Implementation dieser Netzwerke fokussiert hat, wollen wir das Trainingsverfahren optimieren. Dazu wollen wir die bisher verwendeten Algorithmen (evolutionäres Lernen und Pattern Search) selbst implementieren und genauer sowie mit neuen Parametern auszuprobieren und zu vergleichen. Außerdem wollen wir versuchen, eine Methode für Backpropagation bei MNNs zu entwickeln und implementieren, da eine solche unserer Recherche nach noch nicht ausprobiert wurde.
 
