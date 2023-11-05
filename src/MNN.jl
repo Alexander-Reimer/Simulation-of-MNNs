@@ -360,6 +360,19 @@ function loss(network::Network)
     return sum((goal_positions .- x_positions) .^ 2) / rows
 end
 
+function loss_diffable(network::Network)
+    col = network.columns
+    rows = network.row_counts[col]
+    s = 0
+    for row in 1:rows
+        neuron = get_neuron(network, col, row)
+        goal_pos = (col - 1) * network.xdist
+        goal_pos += row == rows ÷ 2 ? 1 : 0 
+        s += (goal_pos - neuron.pos[1])^2
+    end
+    return s / rows
+end
+
 function reset!(network::Network)
     set_neuron_positions!(network)
     set_neuron_velocities!(network)
