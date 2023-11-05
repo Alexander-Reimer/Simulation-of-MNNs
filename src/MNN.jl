@@ -356,7 +356,7 @@ function loss(network::Network)
         x_positions[row] = neuron.pos[1]
         goal_positions[row] = (col - 1) * network.xdist
     end
-    goal_positions[rows÷2] += 1
+    goal_positions[rows÷2] -= 1
     return sum((goal_positions .- x_positions) .^ 2) / rows
 end
 
