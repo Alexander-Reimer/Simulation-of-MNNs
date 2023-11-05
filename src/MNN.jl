@@ -198,35 +198,6 @@ function initialize_graph!(network::Network)
     initialize_neurons!(network)
     initialize_springs!(network)
     print_graph(network)
-
-    # res = true
-    # # TODO
-    # rows = network.rows
-    # cols = network.columns
-    # for col in 2:cols
-    #     for row1 in 1:rows
-    #         for row2 in 1:rows
-    #             i1 = (col-2)*rows + row1
-    #             i2 = (col-1)*rows + row2
-    #             res = res && add_edge!(network.graph, )
-    #         end
-
-    #         i_right_row = (row-1)*cols + col
-    #         res = res && add_edge!(network.graph, i_right_row-cols, i_)
-    #     end
-    # end
-    # for i = (2*rows + 2) : (2*rows + 1)*cols + rows
-    #     res = res && add_edge!(network.graph, i, i-(rows*2 + 1), Spring(spring_init(), 1))
-    # end
-    # for i = rows + 1:(2*rows +1)*(cols)+rows
-    #     if norm(network.graph[i].pos .- network.graph[i-rows].pos) < 1.1
-    #         res = res && add_edge!(network.graph, i, i-rows, Spring(r_spring_constant(),1))
-    #     end
-    #     if (i-rows-1 > 0 && norm(network.graph[i].pos .- network.graph[i-rows-1].pos) < 1.1)
-    #         res = res && add_edge!(network.graph, i, i-rows-1, Spring(r_spring_constant(),1))
-    #     end
-    # end
-    # return res
 end
 
 """
