@@ -6,7 +6,7 @@
 [![Coverage](https://codecov.io/gh/alex/MNN.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alex/MNN.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
-Notwendig vorher in Shell:
+Bei Verwendung von NixOS notwendig vorher in Shell, damit Makie funktioniert:
 
 ```bash
 LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib";
