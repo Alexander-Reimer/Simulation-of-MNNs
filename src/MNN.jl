@@ -346,6 +346,25 @@ function simulate!(network::Network, delta::Number, epochs::Int;
     end
 end
 
+function loss(network::Network)
+    col = network.columns
+    rows = network.row_counts[col]
+    x_positions = Array{Float64}(undef, rows)
+    goal_positions = Array{Float64}(undef, rows)
+    for row in 1:rows
+        neuron = get_neuron(network, col, row)
+        x_positions[row] = neuron.pos[1]
+        goal_positions[row] = (col - 1) * network.xdist
+    end
+    goal_positions[rows÷2] += 3
+    return sum((goal_positions .- x_positions) .^ 2) / rows
+end
+
+function reset!(network::Network)
+    set_neuron_positions!(network)
+    set_neuron_velocities!(network)
+end
+
 function update_positions!(vis::Visualizer, network::Network)
     for n in 1:network.neuron_count
         neuron = get_neuron(network, n)
@@ -366,12 +385,12 @@ function update_positions!(vis::Visualizer, network::Network)
     end
 end
 
-function Visualizer(network::Network; max_fps::Number = 10)
+function Visualizer(network::Network; max_fps::Number=10)
     @info "test"
     neuron_xs = Observable(Vector{Float64}(undef, network.neuron_count), ignore_equal_values=true)
     neuron_ys = Observable(Vector{Float64}(undef, network.neuron_count), ignore_equal_values=true)
-    throttle(1/max_fps, neuron_xs)
-    throttle(1/max_fps, neuron_ys)
+    throttle(1 / max_fps, neuron_xs)
+    throttle(1 / max_fps, neuron_ys)
     edge_pairs = collect(keys(network.graph.edge_data))
 
     fig = Figure()
@@ -384,20 +403,15 @@ function Visualizer(network::Network; max_fps::Number = 10)
 
     for (n1, n2) in edge_pairs
         vis.observers[n1, n2, :xs] = Observable([neuron_xs.val[n1], neuron_xs.val[n2]])
-        throttle(1/max_fps, vis.observers[n1, n2, :xs])
+        throttle(1 / max_fps, vis.observers[n1, n2, :xs])
         vis.observers[n1, n2, :ys] = Observable([neuron_ys.val[n1], neuron_ys.val[n2]])
-        throttle(1/max_fps, vis.observers[n1, n2, :ys])
+        throttle(1 / max_fps, vis.observers[n1, n2, :ys])
         l = lines!(vis.observers[n1, n2, :xs], vis.observers[n1, n2, :ys], color=:red, stroke=10)
         # break
     end
 
     display(fig)
     return vis
-end
-
-function reset!(network::Network)
-    set_neuron_positions!(network)
-    set_neuron_velocities!(network)
 end
 
 end
