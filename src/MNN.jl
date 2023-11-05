@@ -57,9 +57,6 @@ function print_graph(network::Network)
             println("\t Pos: $(n.pos), movable: $(n.movable)")
         end
     end
-    # for n in network.graph.vertex_properties |> values
-    #     println("Pos: $(n[2].pos), movable: $(n[2].movable)")
-    # end
 end
 
 
@@ -212,7 +209,6 @@ function Network(columns, rows)
     graph = new_graph()
     network = Network(graph, rows, columns)
     initialize_graph!(network)
-    # @info "Successful initialization?" res
     print_graph(network)
     return network
 end
@@ -288,10 +284,8 @@ function update_position!(network::Network, n::Int, delta::Number)
         return
     end
     f = calculate_force(network, n) * delta
-    # @info "f: $(round.(f, digits=2))"
     neuron.velocity .+= f
     neuron.velocity .*= 0.95
-    # @info "v: $(round.(neuron.velocity, digits=3))"
     neuron.pos .+= neuron.velocity * delta
 end
 
@@ -391,7 +385,6 @@ function Visualizer(network::Network; max_fps::Number=10)
         vis.observers[n1, n2, :ys] = Observable([neuron_ys.val[n1], neuron_ys.val[n2]])
         throttle(1 / max_fps, vis.observers[n1, n2, :ys])
         l = lines!(vis.observers[n1, n2, :xs], vis.observers[n1, n2, :ys], color=:red, stroke=10)
-        # break
     end
 
     display(fig)
@@ -407,7 +400,6 @@ function set_spring_data!(network::Network, spring_data::Dict)
 end
 
 function get_spring_constants(network::Network)
-    # spring_constants = Array{Float64}(undef, length(network.graph.edge_data))
     return network.graph.edge_data
 end
 
