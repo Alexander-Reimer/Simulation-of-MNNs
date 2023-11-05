@@ -1,3 +1,4 @@
 {
     "julia.usePlotPane": false,
+    "julia.additionalArgs": ["--threads=auto"]
 }

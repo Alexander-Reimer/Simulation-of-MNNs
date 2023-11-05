@@ -356,7 +356,7 @@ function loss(network::Network)
         x_positions[row] = neuron.pos[1]
         goal_positions[row] = (col - 1) * network.xdist
     end
-    goal_positions[rows÷2] += 3
+    goal_positions[rows÷2] += 1
     return sum((goal_positions .- x_positions) .^ 2) / rows
 end
 
@@ -458,17 +458,39 @@ function calc_losses!(network, candidates, losses; vis=nothing, delta=0.01, epoc
     end
 end
 
-function train!(network::Network, epochs::Int, vis=nothing)
-    candidates = Array{Dict{Tuple{Int64,Int64},MNN.Spring}}(undef, 10)
+function calc_losses_parallel!(network, candidates, losses; vis=nothing, delta=0.01, epochs=250)
+    candidate_is = [i for i in eachindex(candidates)]
+    chunks = Iterators.partition(candidate_is, max(length(candidate_is) ÷ Threads.nthreads(), 1))
+    tasks = map(chunks) do i
+        if length(i) == 1
+            i = i[1]
+            Threads.@spawn calc_loss(deepcopy($network), $(candidates[i]))
+        else
+            for j = i[1]:i[2]
+                Threads.@spawn calc_loss(deepcopy($network), $(candidates[j]))
+            end
+        end
+    end
+    results = fetch.(tasks)
+    for i in eachindex(results)
+        losses[i] = results[i]
+    end
+end
+
+function train!(network::Network, epochs::Int; vis=nothing, mutations=20, parallel=true, mutation_strength=0.3)
+    candidates = Array{Dict{Tuple{Int64,Int64},MNN.Spring}}(undef, mutations)
     [candidates[i] = Dict() for i in eachindex(candidates)]
-    candidate_losses = Vector{Float64}(undef, 10)
+    candidate_losses = Vector{Float64}(undef, mutations)
     best_candidate = copy(get_spring_constants(network))
+    loss_function! = parallel ? calc_losses_parallel! : calc_losses!
     for i = 1:epochs
-        create_mutations!(best_candidate, candidates)
-        calc_losses!(network, candidates, candidate_losses, vis=vis)
+        create_mutations!(best_candidate, candidates, strength=mutation_strength)
+        loss_function!(network, candidates, candidate_losses, vis=vis)
         best_candidate = deepcopy(candidates[argmin(candidate_losses)])
         @info "Epoch: $i, best loss: $(minimum(candidate_losses))"
     end
+    # this call to calc_loss also saves best candidate in network
+    @info "Final loss: $(calc_loss(network, best_candidate))"
 end
 
 end
