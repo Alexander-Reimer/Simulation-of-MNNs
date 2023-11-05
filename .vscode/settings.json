@@ -1,4 +1,5 @@
 {
     "julia.usePlotPane": false,
-    "julia.additionalArgs": ["--threads=auto"]
+    "julia.additionalArgs": ["--threads=auto"],
+    "window.zoomLevel": 2,
 }
