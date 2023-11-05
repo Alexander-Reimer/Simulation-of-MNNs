@@ -477,10 +477,10 @@ function calc_losses_parallel!(network, candidates, losses; vis=nothing, delta=0
     tasks = map(chunks) do i
         if length(i) == 1
             i = i[1]
-            Threads.@spawn calc_loss(deepcopy($network), $(candidates[i]))
+            Threads.@spawn calc_loss(deepcopy($network), $(candidates[i]), epochs=$epochs)
         else
             for j = i[1]:i[2]
-                Threads.@spawn calc_loss(deepcopy($network), $(candidates[j]))
+                Threads.@spawn calc_loss(deepcopy($network), $(candidates[j]), epochs=$epochs)
             end
         end
     end
@@ -490,7 +490,7 @@ function calc_losses_parallel!(network, candidates, losses; vis=nothing, delta=0
     end
 end
 
-function train!(network::Network, epochs::Int; vis=nothing, mutations=20, parallel=true, mutation_strength=0.3)
+function train!(network::Network, epochs::Int; vis=nothing, mutations=20, parallel=true, mutation_strength=0.3, simepochs=250)
     candidates = Array{Dict{Tuple{Int64,Int64},MNN.Spring}}(undef, mutations)
     [candidates[i] = Dict() for i in eachindex(candidates)]
     candidate_losses = Vector{Float64}(undef, mutations)
@@ -498,7 +498,7 @@ function train!(network::Network, epochs::Int; vis=nothing, mutations=20, parall
     loss_function! = parallel ? calc_losses_parallel! : calc_losses!
     for i = 1:epochs
         create_mutations!(best_candidate, candidates, strength=mutation_strength)
-        loss_function!(network, candidates, candidate_losses, vis=vis)
+        loss_function!(network, candidates, candidate_losses, vis=vis, epochs=simepochs)
         best_candidate = deepcopy(candidates[argmin(candidate_losses)])
         @info "Epoch: $i, best loss: $(minimum(candidate_losses))"
     end
