@@ -6,7 +6,7 @@ using LinearAlgebra
 using MetaGraphsNext
 using Observables
 
-mutable struct Neuron
+struct Neuron
     # https://jkrumbiegel.com/pages/2020-10-31-tuples-and-vectors/
     # TODO: cause of error?
     # pos::Tuple{Float64, Float64}
@@ -15,9 +15,9 @@ mutable struct Neuron
     movable::Bool
 end
 
-struct Spring
+mutable struct Spring
     spring_constant::Float64
-    length::Float64
+    const length::Float64
 end
 spring_init() = rand() - 0.5
 
@@ -318,31 +318,31 @@ function update_position!(network::Network, n::Int, delta::Number)
     end
     f = calculate_force(network, n) * delta
     # @info "f: $(round.(f, digits=2))"
-    neuron.velocity += f
-    neuron.velocity *= 0.95
+    neuron.velocity .+= f
+    neuron.velocity .*= 0.95
     # @info "v: $(round.(neuron.velocity, digits=3))"
-    neuron.pos += neuron.velocity * delta
+    neuron.pos .+= neuron.velocity * delta
 end
 
 function simulate!(network::Network, delta::Number, epochs::Int;
-    vis::Union{Visualizer,Nothing}=nothing)
-    for i = 1:epochs/10
-        start_time = time()
-        for j = 1:10
-            for row in 1:network.row_counts[1]
-                get_neuron(network, 0, row).velocity[1] += 0.5 / (1 / delta)
-            end
-            for n in 1:network.neuron_count
-                update_position!(network, n, delta)
-            end
-            if vis !== nothing
-                update_positions!(vis, network)
-                sleep(0.005)
-            end
+    vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false)
+    showfps ? start_time = time() : nothing
+    for i = 1:epochs
+        for row in 1:network.row_counts[1]
+            get_neuron(network, 0, row).velocity[1] += 0.5 / (1 / delta)
         end
-        fps = 10 / (time() - start_time)
-        @info "FPS: $fps"
+        for n in 1:network.neuron_count
+            update_position!(network, n, delta)
+        end
+        if vis !== nothing
+            update_positions!(vis, network)
+            sleep(0.005)
+        end
         # TODO: adjust delta automatically dependant on fps?
+    end
+    if showfps
+        fps = epochs / (time() - start_time)
+        @info "FPS: $fps"
     end
 end
 
@@ -412,6 +412,63 @@ function Visualizer(network::Network; max_fps::Number=10)
 
     display(fig)
     return vis
+end
+
+function set_spring_data!(network::Network, spring_data::Dict)
+    for x in spring_data
+        key = x[1]
+        val = x[2]
+        network.graph.edge_data[key] = val
+    end
+end
+
+function get_spring_constants(network::Network)
+    # spring_constants = Array{Float64}(undef, length(network.graph.edge_data))
+    return network.graph.edge_data
+end
+
+function mutate!(spring_data::Dict, strength=0.1)
+    for x in spring_data
+        spring = x[2]
+        spring.spring_constant += strength * (rand() - 0.5)
+    end
+    return spring_data
+end
+
+function create_mutation(spring_data::Dict, strength=0.1)
+    return mutate!(deepcopy(spring_data), strength)
+end
+
+function create_mutations!(spring_data::Dict{Tuple{Int64,Int64},MNN.Spring}, mutations::Vector{Dict{Tuple{Int64,Int64},MNN.Spring}}; strength=0.1)
+    for i in eachindex(mutations)
+        mutations[i] = create_mutation(spring_data, strength)
+    end
+end
+
+function calc_loss(network::Network, spring_data::Dict{Tuple{Int64,Int64},MNN.Spring}; vis=nothing, delta=0.01, epochs=500)
+    reset!(network)
+    set_spring_data!(network, spring_data)
+    simulate!(network, delta, epochs, vis=vis)
+    return loss(network)
+end
+
+function calc_losses!(network, candidates, losses; vis=nothing, delta=0.01, epochs=250)
+    for i in eachindex(losses)
+        losses[i] = calc_loss(network, candidates[i], vis=vis, delta=delta, epochs=epochs)
+    end
+end
+
+function train!(network::Network, epochs::Int, vis=nothing)
+    candidates = Array{Dict{Tuple{Int64,Int64},MNN.Spring}}(undef, 10)
+    [candidates[i] = Dict() for i in eachindex(candidates)]
+    candidate_losses = Vector{Float64}(undef, 10)
+    best_candidate = copy(get_spring_constants(network))
+    for i = 1:epochs
+        create_mutations!(best_candidate, candidates)
+        calc_losses!(network, candidates, candidate_losses, vis=vis)
+        best_candidate = deepcopy(candidates[argmin(candidate_losses)])
+        @info "Epoch: $i, best loss: $(minimum(candidate_losses))"
+    end
 end
 
 end
