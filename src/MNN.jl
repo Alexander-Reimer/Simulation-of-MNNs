@@ -39,13 +39,29 @@ mutable struct Network
     neuron_count::Int
     xdist::Float64
     ydist::Float64
+    start_positions::Dict{Int, Vector{Number}}
 end
 
-function Network(graph::MetaGraphsNext.MetaGraph, rows::Int, columns::Int, xdist::Float64=1.0)
+mutable struct Behaviour
+    goals::Dict{Int, Vector{Number}}
+    relative::Bool
+    modifier::Function
+end
+
+NoModifier() = (network, delta) -> nothing
+NoBehaviour() = Behaviour(Dict(), false, NoModifier())
+
+mutable struct Trainer
+    behaviours::Vector{Behaviour}
+end
+
+function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
     row_counts = Array{Int}(undef, columns)
     col_fixed = Array{Bool}(undef, columns)
     neuron_count = 0
-    Network(graph, rows, row_counts, col_fixed, columns, neuron_count, xdist, calc_ydist(xdist))
+    start_positions = Dict{Int, Vector{Number}}()
+    Network(graph, rows, row_counts, col_fixed, columns, neuron_count, xdist, 
+        calc_ydist(xdist), start_positions)
 end
 
 function print_graph(network::Network)
@@ -104,6 +120,7 @@ function set_neuron_positions!(network::Network, column::Int)
         neuron = get_neuron(network, i)
         neuron.pos[1] = xpos
         neuron.pos[2] = ypos
+        network.start_positions[i] = [xpos, ypos]
     end
 end
 
@@ -289,13 +306,23 @@ function update_position!(network::Network, n::Int, delta::Number)
     neuron.pos .+= neuron.velocity * delta
 end
 
+function addvelocity!(network::Network, delta::Number, v::Number)
+    for row in 1:network.row_counts[1]
+        get_neuron(network, 0, row).velocity[1] += v / (1 / delta)
+    end
+end
+
+netpush!(network::Network, delta::Number) = addvelocity!(network, delta, 0.5)
+netpull!(network::Network, delta::Number) = addvelocity!(network, delta, -0.5)
+
+
 function simulate!(network::Network, delta::Number, epochs::Int;
-    vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false)
+    vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false, 
+    modifier::Function=NoModifier())
+
     showfps ? start_time = time() : nothing
     for i = 1:epochs
-        for row in 1:network.row_counts[1]
-            get_neuron(network, 0, row).velocity[1] += 0.5 / (1 / delta)
-        end
+        modifier(network, delta)
         for n in 1:network.neuron_count
             update_position!(network, n, delta)
         end
@@ -311,32 +338,47 @@ function simulate!(network::Network, delta::Number, epochs::Int;
     end
 end
 
-function loss(network::Network)
-    col = network.columns
-    rows = network.row_counts[col]
-    x_positions = Array{Float64}(undef, rows)
-    goal_positions = Array{Float64}(undef, rows)
-    for row in 1:rows
-        neuron = get_neuron(network, col, row)
-        x_positions[row] = neuron.pos[1]
-        goal_positions[row] = (col - 1) * network.xdist
-    end
-    goal_positions[rows÷2] -= 1
-    return sum((goal_positions .- x_positions) .^ 2) / rows
+function simulate_b!(network::Network, delta::Number, epochs::Int;
+    vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false, 
+    behaviour::Behaviour=NoBehaviour())
+    simulate!(network, delta, epochs; vis = vis, showfps = showfps, 
+        modifier = behaviour.modifier)
 end
 
-function loss_diffable(network::Network)
-    col = network.columns
-    rows = network.row_counts[col]
+function loss(network::Network, behaviour::Behaviour)
     s = 0
-    for row in 1:rows
-        neuron = get_neuron(network, col, row)
-        goal_pos = (col - 1) * network.xdist
-        goal_pos += row == rows ÷ 2 ? 1 : 0 
-        s += (goal_pos - neuron.pos[1])^2
+    for (neuron_i, goal_pos) in behaviour.goals
+        neuron = get_neuron(network, neuron_i)
+        if behaviour.relative
+            start_pos = network.start_positions[neuron_i]
+            goal_pos += start_pos
+        end
+        s += (goal_pos[1] - neuron.pos[1]) ^ 2
+        s += (goal_pos[2] - neuron.pos[2]) ^ 2
     end
-    return s / rows
+    return s / length(behaviour.goals)
 end
+
+# function loss(network::Network, behaviours::Vector{Behaviour})
+#     col = network.columns
+#     rows = network.row_counts[col]
+#     s = 0
+#     for row in 1:rows
+#         diff = 0.0
+#         neuron_i = get_neuron_index(network, col, row)
+        
+#         start_pos = (col - 1) * network.xdist
+#         for b in behaviours
+#             if haskey(b.goals, neuron)
+
+#         end
+
+#         neuron = get_neuron(network, neuron_i)
+#         goal_pos += row == rows ÷ 2 ? 1 : 0 
+#         s += (goal_pos - neuron.pos[1])^2
+#     end
+#     return s / rows
+# end
 
 function reset!(network::Network)
     set_neuron_positions!(network)
@@ -421,29 +463,45 @@ function create_mutations!(spring_data::Dict{Tuple{Int64,Int64},MNN.Spring}, mut
     end
 end
 
-function calc_loss(network::Network, spring_data::Dict{Tuple{Int64,Int64},MNN.Spring}; vis=nothing, delta=0.01, epochs=500)
-    reset!(network)
+function calc_loss(network::Network, spring_data::Dict{Tuple{Int64,Int64},MNN.Spring}, 
+        behaviours::Vector{Behaviour}; 
+    vis=nothing, delta=0.01, epochs=500)
+    
+    l = 0
     set_spring_data!(network, spring_data)
-    simulate!(network, delta, epochs, vis=vis)
-    return loss(network)
+    for b in behaviours
+        reset!(network)
+        simulate_b!(network, delta, epochs, vis=vis, behaviour=b)
+        l += loss(network, b)
+    end
+
+    return l
 end
 
-function calc_losses!(network, candidates, losses; vis=nothing, delta=0.01, epochs=250)
+function calc_losses!(network, candidates, losses; vis=nothing, delta=0.01, 
+    epochs=250, behaviours::Vector{Behaviour})
     for i in eachindex(losses)
-        losses[i] = calc_loss(network, candidates[i], vis=vis, delta=delta, epochs=epochs)
+        losses[i] = calc_loss(network, candidates[i], vis=vis, delta=delta, 
+            epochs=epochs, behaviours=behaviours)
     end
 end
 
-function calc_losses_parallel!(network, candidates, losses; vis=nothing, delta=0.01, epochs=250)
+function calc_losses_parallel!(network, candidates, losses, 
+        behaviours::Vector{Behaviour}; vis=nothing, 
+    
+    delta=0.01, epochs=250)
+
     candidate_is = [i for i in eachindex(candidates)]
     chunks = Iterators.partition(candidate_is, max(length(candidate_is) ÷ Threads.nthreads(), 1))
     tasks = map(chunks) do i
         if length(i) == 1
             i = i[1]
-            Threads.@spawn calc_loss(deepcopy($network), $(candidates[i]), epochs=$epochs)
+            Threads.@spawn calc_loss(deepcopy($network), $(candidates[i]), 
+                behaviours, epochs=$epochs)
         else
             for j = i[1]:i[2]
-                Threads.@spawn calc_loss(deepcopy($network), $(candidates[j]), epochs=$epochs)
+                Threads.@spawn calc_loss(deepcopy($network), $(candidates[j]), 
+                    behaviours, epochs=$epochs)
             end
         end
     end
@@ -453,20 +511,70 @@ function calc_losses_parallel!(network, candidates, losses; vis=nothing, delta=0
     end
 end
 
-function train!(network::Network, epochs::Int; vis=nothing, mutations=20, parallel=true, mutation_strength=0.3, simepochs=250)
+function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}; 
+        vis=nothing, mutations=20, parallel=true, mutation_strength=0.3, 
+        simepochs=250)
+    
+    loss_function! = parallel ? calc_losses_parallel! : calc_losses!
+    last_rows = network.row_counts[network.rows]
+    out_positions = [[last_rows ÷ 2], [last_rows ÷ 2]]
+    out_changes = [[1], [-1]]
+
     candidates = Array{Dict{Tuple{Int64,Int64},MNN.Spring}}(undef, mutations)
     [candidates[i] = Dict() for i in eachindex(candidates)]
     candidate_losses = Vector{Float64}(undef, mutations)
     best_candidate = copy(get_spring_constants(network))
-    loss_function! = parallel ? calc_losses_parallel! : calc_losses!
+    best_loss = calc_loss(network, best_candidate, behaviours, epochs=simepochs)
     for i = 1:epochs
         create_mutations!(best_candidate, candidates, strength=mutation_strength)
-        loss_function!(network, candidates, candidate_losses, vis=vis, epochs=simepochs)
-        best_candidate = deepcopy(candidates[argmin(candidate_losses)])
-        @info "Epoch: $i, best loss: $(minimum(candidate_losses))"
+        loss_function!(network, candidates, candidate_losses, behaviours, 
+            vis=vis, epochs=simepochs)
+        best_i = argmin(candidate_losses)
+        if candidate_losses[best_i] < best_loss
+            best_loss = candidate_losses[best_i]
+            best_candidate = deepcopy(candidates[i])
+            @info "\tUpdated!"
+        end
+        @info "Epoch: $i, best loss: $(best_loss)"
     end
+    set_spring_data!(network, best_candidate)
     # this call to calc_loss also saves best candidate in network
-    @info "Final loss: $(calc_loss(network, best_candidate))"
+    # @info "Final loss: $(best_los)"
+end
+
+function train!(network::Network, epochs::Int, trainer::Trainer; 
+    vis=nothing, mutations=20, parallel=true, mutation_strength=0.3, 
+    simepochs=250)
+    train!(network, epochs, trainer.behaviours, vis=vis, mutations=mutations, 
+        parallel=parallel, mutation_strength=mutation_strength, simepochs=simepochs)
+end
+
+function behaviour_unmoving(network::Network)
+    col = network.columns
+    rows = network.row_counts[col]
+    goals = Dict{Int, Vector{Number}}()
+    for row in 1:rows
+        neuron_i = get_neuron_index(network, col, row)
+        goals[neuron_i] = [0.0, 0.0]
+    end
+    return Behaviour(goals, true, NoModifier())
+end
+
+function Trainer(network::Network)
+    col = network.columns
+    rows = network.row_counts[col]
+
+    mid_neuron_i = get_neuron_index(network, col, rows ÷ 2)
+    
+    behaviour_pull = behaviour_unmoving(network)
+    behaviour_pull.goals[mid_neuron_i] = [-1.0, 0.0]
+    behaviour_pull.modifier = netpush!
+
+    behaviour_push = behaviour_unmoving(network)
+    behaviour_push.goals[mid_neuron_i] = [1.0, 0.0]
+    behaviour_push.modifier = netpull!
+
+    trainer = Trainer([behaviour_pull, behaviour_pull])
 end
 
 end

@@ -29,3 +29,36 @@ noch nicht ausprobiert wurde.
 Dafür werden wir uns jedoch auf die Anwendung dieser Algorithmen in einer
 Simulation beschränken. Die Ergebnisse sollten dennoch einen guten Startpunkt
 für reale MNNs bieten.
+
+## Benchmarking
+
+No changes:
+
+- Median 78ms
+- 74ms ... 94ms
+- Mem. est.: 117MiB,
+- Allocs est.: 1.5 million
+
+Replace collect with loop:
+
+- Median 74ms
+- 59ms ... 96ms
+- Mem. est.: 108MiB,
+- Allocs est.: 1.4 million
+
+
+Change 3:
+
+- Replaced
+    ```julia
+    accelerations[:,v] = f
+    ```
+    with
+    ```julia
+    accelerations[:,v][1] = f[1]
+    accelerations[:,v][2] = f[2]
+    ```
+- Median 46 μs
+- 42.116 μs ... 7.318 ms
+- Mem. est.: 92 KiB
+- Allocs est.: 1196
