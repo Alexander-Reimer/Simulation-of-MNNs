@@ -7,11 +7,6 @@ using MetaGraphsNext
 using Observables
 
 struct Neuron
-    # https://jkrumbiegel.com/pages/2020-10-31-tuples-and-vectors/
-    # TODO: cause of error?
-    # pos::Tuple{Float64, Float64}
-    pos::Array{Float64,1}
-    velocity::Vector{Float64}
     movable::Bool
 end
 
@@ -39,11 +34,13 @@ mutable struct Network
     neuron_count::Int
     xdist::Float64
     ydist::Float64
-    start_positions::Dict{Int, Vector{Number}}
+    start_positions::Dict{Int,Vector{Number}}
+    positions::Array{Number,2}
+    velocities::Array{Number,2}
 end
 
 mutable struct Behaviour
-    goals::Dict{Int, Vector{Number}}
+    goals::Dict{Int,Vector{Number}}
     relative::Bool
     modifier::Function
 end
@@ -56,12 +53,14 @@ mutable struct Trainer
 end
 
 function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
-    row_counts = Array{Int}(undef, columns)
-    col_fixed = Array{Bool}(undef, columns)
+    row_counts = Vector{Int}(undef, columns)
+    col_fixed = Vector{Bool}(undef, columns)
     neuron_count = 0
-    start_positions = Dict{Int, Vector{Number}}()
-    Network(graph, rows, row_counts, col_fixed, columns, neuron_count, xdist, 
-        calc_ydist(xdist), start_positions)
+    start_positions = Dict{Int,Vector{Number}}()
+    positions = Array{Number,2}(undef, 0, 0)
+    velocities = Array{Number,2}(undef, 0, 0)
+    Network(graph, rows, row_counts, col_fixed, columns, neuron_count, xdist,
+        calc_ydist(xdist), start_positions, positions, velocities)
 end
 
 function print_graph(network::Network)
@@ -70,7 +69,7 @@ function print_graph(network::Network)
         for row in 1:network.row_counts[col]
             i = get_neuron_index(network, col, row)
             n = get_neuron(network, i)
-            println("\t Pos: $(n.pos), movable: $(n.movable)")
+            println("\t Pos: $(network.positions[i, :]), movable: $(n.movable)")
         end
     end
 end
@@ -117,24 +116,22 @@ function set_neuron_positions!(network::Network, column::Int)
         end
 
         i = get_neuron_index(network, column, row)
-        neuron = get_neuron(network, i)
-        neuron.pos[1] = xpos
-        neuron.pos[2] = ypos
+        network.positions[i, 1] = xpos
+        network.positions[i, 2] = ypos
         network.start_positions[i] = [xpos, ypos]
     end
 end
 
 function set_neuron_velocities!(network::Network, column::Int)
     for row in network.row_counts[column]
-        get_neuron(network, column, row).velocity[1] = 0
-        get_neuron(network, column, row).velocity[2] = 0
+        n = get_neuron_index(network, column, row)
+        network.positions[n, :] = [0.0, 0.0]
     end
 end
 
 function set_neuron_velocities!(network::Network)
     for n in 1:network.neuron_count
-        get_neuron(network, n).velocity[1] = 0
-        get_neuron(network, n).velocity[2] = 0
+        network.velocities[n, :] = [0.0, 0.0]
     end
 end
 
@@ -147,9 +144,9 @@ end
 function initialize_neurons!(network::Network)
     function add_column!(rows::Int, column::Int, fixed::Bool)
 
-        function add_neuron!(movable::Bool, xpos::Number, ypos::Number)
+        function add_neuron!(movable::Bool)
             network.neuron_count += 1
-            network.graph[network.neuron_count] = Neuron([xpos, ypos], [0, 0], movable)
+            network.graph[network.neuron_count] = Neuron(movable)
         end
 
         network.row_counts[column] = rows
@@ -157,7 +154,7 @@ function initialize_neurons!(network::Network)
 
         for row in 1:rows
             movable_neuron = !(fixed && (row == 1 || row == rows))
-            add_neuron!(movable_neuron, 0, 0)
+            add_neuron!(movable_neuron)
         end
     end
 
@@ -166,14 +163,17 @@ function initialize_neurons!(network::Network)
         rows = fixed ? network.rows : network.rows - 1
         add_column!(rows, column, fixed)
         fixed = !fixed
-        set_neuron_positions!(network, column)
     end
+    network.positions = Array{Number,2}(undef, network.neuron_count, 2)
+    network.velocities = Array{Number,2}(undef, network.neuron_count, 2)
+    set_neuron_positions!(network)
+    set_neuron_velocities!(network)
 end
 
 function initialize_springs!(network::Network)
     function add_spring!(n1::Int, n2::Int)
-        pos1 = get_neuron(network, n1).pos
-        pos2 = get_neuron(network, n2).pos
+        pos1 = network.positions[n1, :]
+        pos2 = network.positions[n2, :]
         dx = pos1[1] - pos2[1]
         dy = pos1[2] - pos2[2]
         len = sqrt(dx^2 + dy^2)
@@ -301,7 +301,7 @@ function update_position!(network::Network, n::Int, delta::Number)
         return
     end
     f = calculate_force(network, n) * delta
-    neuron.velocity .+= f
+    network.velocities[n, :] .+= f
     neuron.velocity .*= 0.95
     neuron.pos .+= neuron.velocity * delta
 end
@@ -315,9 +315,31 @@ end
 netpush!(network::Network, delta::Number) = addvelocity!(network, delta, 0.5)
 netpull!(network::Network, delta::Number) = addvelocity!(network, delta, -0.5)
 
+springforce(x, k) = -x * (k + x * x)
+
+function simulation_step(accelerations, velocities, positions, p, t)
+    (sim, gam) = p
+    for v in vertices(sim)
+        f = [0.0, 0.0]
+        if sim[v]  # is movable
+            neuros = neighbors(sim, v)
+            springs = collect(sim[neighbor, v] for neighbor in neuros)
+            for j = 1 : length(springs)
+                dif = positions[:,v] - positions[:,neuros[j]]
+                dist = norm(dif)
+                f += springforce((dist - springs[j].l), springs[j].k)  * dif / dist
+            end
+            f -= gam*velocities[:,v] # damping
+            f[2] -= 0.1 #gravity
+            accelerations[:,v] = f
+            # accelerations[1,v] = f[1]
+            # accelerations[2,v] = f[2]
+        end
+    end
+end
 
 function simulate!(network::Network, delta::Number, epochs::Int;
-    vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false, 
+    vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false,
     modifier::Function=NoModifier())
 
     showfps ? start_time = time() : nothing
@@ -339,10 +361,10 @@ function simulate!(network::Network, delta::Number, epochs::Int;
 end
 
 function simulate_b!(network::Network, delta::Number, epochs::Int;
-    vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false, 
+    vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false,
     behaviour::Behaviour=NoBehaviour())
-    simulate!(network, delta, epochs; vis = vis, showfps = showfps, 
-        modifier = behaviour.modifier)
+    simulate!(network, delta, epochs; vis=vis, showfps=showfps,
+        modifier=behaviour.modifier)
 end
 
 function loss(network::Network, behaviour::Behaviour)
@@ -353,8 +375,8 @@ function loss(network::Network, behaviour::Behaviour)
             start_pos = network.start_positions[neuron_i]
             goal_pos += start_pos
         end
-        s += (goal_pos[1] - neuron.pos[1]) ^ 2
-        s += (goal_pos[2] - neuron.pos[2]) ^ 2
+        s += (goal_pos[1] - neuron.pos[1])^2
+        s += (goal_pos[2] - neuron.pos[2])^2
     end
     return s / length(behaviour.goals)
 end
@@ -366,7 +388,7 @@ end
 #     for row in 1:rows
 #         diff = 0.0
 #         neuron_i = get_neuron_index(network, col, row)
-        
+
 #         start_pos = (col - 1) * network.xdist
 #         for b in behaviours
 #             if haskey(b.goals, neuron)
@@ -387,9 +409,8 @@ end
 
 function update_positions!(vis::Visualizer, network::Network)
     for n in 1:network.neuron_count
-        neuron = get_neuron(network, n)
-        vis.neuron_xs.val[n] = neuron.pos[1]
-        vis.neuron_ys.val[n] = neuron.pos[2]
+        vis.neuron_xs.val[n] = network.positions[n, 1]
+        vis.neuron_ys.val[n] = network.positions[n, 2]
     end
     notify(vis.neuron_xs)
     notify(vis.neuron_ys)
@@ -463,10 +484,10 @@ function create_mutations!(spring_data::Dict{Tuple{Int64,Int64},MNN.Spring}, mut
     end
 end
 
-function calc_loss(network::Network, spring_data::Dict{Tuple{Int64,Int64},MNN.Spring}, 
-        behaviours::Vector{Behaviour}; 
+function calc_loss(network::Network, spring_data::Dict{Tuple{Int64,Int64},MNN.Spring},
+    behaviours::Vector{Behaviour};
     vis=nothing, delta=0.01, epochs=500)
-    
+
     l = 0
     set_spring_data!(network, spring_data)
     for b in behaviours
@@ -478,29 +499,27 @@ function calc_loss(network::Network, spring_data::Dict{Tuple{Int64,Int64},MNN.Sp
     return l
 end
 
-function calc_losses!(network, candidates, losses; vis=nothing, delta=0.01, 
+function calc_losses!(network, candidates, losses; vis=nothing, delta=0.01,
     epochs=250, behaviours::Vector{Behaviour})
     for i in eachindex(losses)
-        losses[i] = calc_loss(network, candidates[i], vis=vis, delta=delta, 
+        losses[i] = calc_loss(network, candidates[i], vis=vis, delta=delta,
             epochs=epochs, behaviours=behaviours)
     end
 end
 
-function calc_losses_parallel!(network, candidates, losses, 
-        behaviours::Vector{Behaviour}; vis=nothing, 
-    
-    delta=0.01, epochs=250)
+function calc_losses_parallel!(network, candidates, losses,
+    behaviours::Vector{Behaviour}; vis=nothing, delta=0.01, epochs=250)
 
     candidate_is = [i for i in eachindex(candidates)]
     chunks = Iterators.partition(candidate_is, max(length(candidate_is) ÷ Threads.nthreads(), 1))
     tasks = map(chunks) do i
         if length(i) == 1
             i = i[1]
-            Threads.@spawn calc_loss(deepcopy($network), $(candidates[i]), 
+            Threads.@spawn calc_loss(deepcopy($network), $(candidates[i]),
                 behaviours, epochs=$epochs)
         else
             for j = i[1]:i[2]
-                Threads.@spawn calc_loss(deepcopy($network), $(candidates[j]), 
+                Threads.@spawn calc_loss(deepcopy($network), $(candidates[j]),
                     behaviours, epochs=$epochs)
             end
         end
@@ -511,10 +530,10 @@ function calc_losses_parallel!(network, candidates, losses,
     end
 end
 
-function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}; 
-        vis=nothing, mutations=20, parallel=true, mutation_strength=0.3, 
-        simepochs=250)
-    
+function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
+    vis=nothing, mutations=20, parallel=true, mutation_strength=0.3,
+    simepochs=250)
+
     loss_function! = parallel ? calc_losses_parallel! : calc_losses!
     last_rows = network.row_counts[network.rows]
     out_positions = [[last_rows ÷ 2], [last_rows ÷ 2]]
@@ -527,7 +546,7 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
     best_loss = calc_loss(network, best_candidate, behaviours, epochs=simepochs)
     for i = 1:epochs
         create_mutations!(best_candidate, candidates, strength=mutation_strength)
-        loss_function!(network, candidates, candidate_losses, behaviours, 
+        loss_function!(network, candidates, candidate_losses, behaviours,
             vis=vis, epochs=simepochs)
         best_i = argmin(candidate_losses)
         if candidate_losses[best_i] < best_loss
@@ -542,17 +561,17 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
     # @info "Final loss: $(best_los)"
 end
 
-function train!(network::Network, epochs::Int, trainer::Trainer; 
-    vis=nothing, mutations=20, parallel=true, mutation_strength=0.3, 
+function train!(network::Network, epochs::Int, trainer::Trainer;
+    vis=nothing, mutations=20, parallel=true, mutation_strength=0.3,
     simepochs=250)
-    train!(network, epochs, trainer.behaviours, vis=vis, mutations=mutations, 
+    train!(network, epochs, trainer.behaviours, vis=vis, mutations=mutations,
         parallel=parallel, mutation_strength=mutation_strength, simepochs=simepochs)
 end
 
 function behaviour_unmoving(network::Network)
     col = network.columns
     rows = network.row_counts[col]
-    goals = Dict{Int, Vector{Number}}()
+    goals = Dict{Int,Vector{Number}}()
     for row in 1:rows
         neuron_i = get_neuron_index(network, col, row)
         goals[neuron_i] = [0.0, 0.0]
@@ -565,7 +584,7 @@ function Trainer(network::Network)
     rows = network.row_counts[col]
 
     mid_neuron_i = get_neuron_index(network, col, rows ÷ 2)
-    
+
     behaviour_pull = behaviour_unmoving(network)
     behaviour_pull.goals[mid_neuron_i] = [-1.0, 0.0]
     behaviour_pull.modifier = netpush!
@@ -574,7 +593,7 @@ function Trainer(network::Network)
     behaviour_push.goals[mid_neuron_i] = [1.0, 0.0]
     behaviour_push.modifier = netpull!
 
-    trainer = Trainer([behaviour_pull, behaviour_pull])
+    return Trainer([behaviour_pull, behaviour_pull])
 end
 
 end
