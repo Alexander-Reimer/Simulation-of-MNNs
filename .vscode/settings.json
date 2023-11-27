@@ -2,4 +2,29 @@
     "julia.usePlotPane": false,
     "julia.additionalArgs": ["--threads=auto"],
     "window.zoomLevel": 1,
+    "latex-workshop.latex.recipe.default": "latexmk (xelatex) (escape)",
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "latexmk (xelatex) (escape)",
+            "tools": [
+                "xelatexmk (escape)"
+            ]
+        },
+    ],
+    "latex-workshop.latex.tools": [
+        {
+            "name": "xelatexmk (escape)",
+            "command": "latexmk",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "-xelatex",
+                "-shell-escape",
+                "-outdir=%OUTDIR%",
+                "%DOC%"
+            ],
+            "env": {}
+        }
+    ]
 }
