@@ -3,14 +3,12 @@
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{microtype}
 \usepackage{abstract}
-% \usepackage[ngerman]{babel}
+\usepackage[ngerman]{babel}
 \usepackage{biblatex}
 \addbibresource{quellen.bib}
 \usepackage{csquotes}
 \usepackage{hyperref}
 \usepackage{graphicx}
-% https://ctan.space-pro.be/tex-archive/macros/latex/contrib/graphviz/graphviz.pdf
-\usepackage[pdf]{graphviz}
 
 % https://tex.stackexchange.com/a/313337
 \usepackage{enumitem,amssymb}
@@ -33,7 +31,7 @@
 
 \title{
     Analyse der Optimierungsverfahren mechanischer neuronaler Netzwerke \\ 
-    \lARGE \normalfont Projektskizze
+    \LARGE \normalfont Projektskizze
 }
 \author{Alexander Reimer \and Matteo Friedrich}
 \date{\today}
@@ -67,16 +65,16 @@ Dazu kann das Material sowohl in einer Simulation als auch physisch, durch Senso
 
 \begin{figure}
     \centering
-    % \includegraphics[width=0.4\linewidth]{bilder/mnn1-1.jpg}
+    \includegraphics[width=0.4\linewidth]{bilder/mnn1-1.jpg}
     \label{fig:mnn1-1}
-    \caption{Repräsentation eines MNN}
+    \caption{Repräsentation eines MNN (von \cite{Lee2022})}
 \end{figure}
 
 \begin{figure}
     \centering
-    % \includegraphics[width=0.7\linewidth]{bilder/mnn2-1.jpg}
+    \includegraphics[width=0.7\linewidth]{bilder/mnn2-1.jpg}
     \label{fig:mnn2-1}
-    \caption{Mechanische Umsetzung eines MNN}
+    \caption{Mechanische Umsetzung eines MNN (von \cite{Lee2022})}
 \end{figure}
 
 \section{Forscherfrage}
@@ -92,15 +90,26 @@ Es wird davon ausgegangen, dass
 
 \section{Zeitplan}
 
-\begin{tblr}{hlines, vlines, colspec={Q[c, 1cm] Q[r, 2.3cm] X l}, width=\textwidth}
-    Status & Zeit & Thema & Person \\
+\begin{tblr}{hlines, vlines, colspec={Q[c, 0.3cm] Q[r, 2.7cm] X l}, width=\textwidth}
+    % Status
+    & Zeit & Thema & Person \\
     \hline
+    \done & & Proof-of-Concept für MNNs & Matteo \\
+    \done & & Refactor des ersten Proof-of-Concept & Alex \\
     \done & & Proof-of-Concept für analytische Umsetzung der Simulation & Matteo \\
     \done & & Umsetzung des Trainierens mehrerer Verhaltensweisen gleichzeitig & Alex \\
-    \done & bis 30.11.2023 & JuFo-Anmeldung \\
+    \done & \textbf{bis 30.11.2023} & JuFo-Anmeldung \\
     \todo & & Projektskizze anfertigen & Alex \\
     \todo & bis 3.12.2023 & weitere Literatur lesen (\cite{Hopkins2023, Zadpoor2023, Napolitano2022}) & Alex \\
     \todo & bis 3.12.2023 & Implementierung analytischer Definition für Simulation (Proof-of-Concept) im Hauptprojekt & Matteo \\
+    \todo & bis 10.12.2023 & Proof-of-Concept für Gradient Descent & \\
+    \todo & bis 10.12.2023 & Oberflächliche Recherche zu Pattern Search: Leicht umzusetzen? Wenn nein, dann erstmal außen vor lassen (\cite{Lee2022} hat bereits gezeigt, dass schlechter als evolutionär, auch wenn mit stark unterschiedlicher Trainingsdauer) & \\
+    \todo & bis 17.12.2023 & Verbesserung evolutionärer Algorithmus & \\
+    & & Projektskizze aktuell halten & Alex \\
+    \todo & & UML-Diagramm des Codes & Alex \\
+    \todo & & Recherche zu Resonanzfrequenzen: wirklich ein Problem? Wenn ja, Resonanzfrequenzen in Simulation analysieren (FFT?) & \\
+    \todo & \textbf{15.01.2023} & Abgabe Bericht & \\
+
 \end{tblr}
 
 \section{Materialien}
@@ -115,15 +124,35 @@ Es wird davon ausgegangen, dass
     \end{itemize}
 \end{itemize}
 
-\section{Erwartete Schwierigkeiten}
+% \section{Erwartete Schwierigkeiten}
 
-\begin{itemize}
-    \item a
-\end{itemize}
+% \begin{itemize}
+%     \item a
+% \end{itemize}
 
 \section{Bisherige Ergebnisse}
 
 Quellcode: Siehe GitHub-Repository \cite{RepoMNN}.
+Siehe Abb. \ref{fig:uml} für ein UML-Diagramm des Projekts.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{uml.pdf}
+    \caption{UML-Diagramm des Programm-Aufbaus.}
+    \label{fig:uml}
+\end{figure}
+
+Wie teilweise auch aus dem Zeitplan ersichtlich wurden bereits die Simulation, eine Optimierung dieser durch eine analytische Funktion, die Visualisierung und Animation des Netzwerks sowie ein simpler evolutionärer Algorithmus implementiert.
+
+Trainieren mit diesem evolutionären Algorithmus hat bereits bei einzelnen, simplen Verhaltensweisen Erfolg gezeigt.
+
+Bereits probierte und erfolgreich antrainierte Verhaltensweisen:
+
+\begin{itemize}
+    \item Links eine Kraft nach rechts ausüben; Bewegung der Ausgangsneuronen nach rechts 
+    \item Links eine Kraft nach rechts ausüben; Bewegung der Ausgangsneuronen nach links
+    \item Links eine Kraft nach links ausüben; Bewegung der Ausgangsneuronen nach rechts
+\end{itemize}
 
 
 \section{Literatur}
