@@ -1,4 +1,6 @@
-#module MNN
+module MNN
+
+export Network, simulate!, Trainer, train!, Visualizer, netpush!, netpull!, draw!, reset!
 
 using DifferentialEquations
 using GLMakie
@@ -126,7 +128,7 @@ end
 function set_neuron_velocities!(network::Network, column::Int)
     for row in network.row_counts[column]
         n = get_neuron_index(network, column, row)
-        network.positions[:,n] = [0.0, 0.0] #sollte das nicht network.velocities sein????????????????????????????????????????????????????????????????????????????????????????????????????????
+        network.velocities[:,n] = [0.0, 0.0] #sollte das nicht network.velocities sein????????????????????????????????????????????????????????????????????????????????????????????????????????
     end
 end
 
@@ -363,9 +365,9 @@ function simulate!(network, tspan; modifier::Function=NoModifier())
     positions = zeros(Float64, 2, Int(length(pos)/2))
     for i = 1:length(pos)
         if i%2 == 0
-            positions[1,Int(i/2)] = pos[i]
+            positions[2,Int(i/2)] = pos[i]
         else
-            positions[2,Int((i+1)/2)] = pos[i]
+            positions[1,Int((i+1)/2)] = pos[i]
         end
     end
     network.positions = positions
@@ -426,7 +428,7 @@ function simulate_b!(network::Network, delta::Number, epochs::Int;
     behaviour::Behaviour=NoBehaviour())
     #simulate!(network, delta, epochs; vis=vis, showfps=showfps,
         #modifier=behaviour.modifier)
-    simulate!(network, (0.0,50.0), modifier=behaviour.modifier)
+    simulate!(network, (0.0,100.0), modifier=behaviour.modifier)
 end
 
 function loss(network::Network, behaviour::Behaviour)
@@ -519,9 +521,7 @@ function Visualizer(network::Network; max_fps::Number=10)
 end
 
 function set_spring_data!(network::Network, spring_data::Dict)
-    for x in spring_data
-        key = x[1]
-        val = x[2]
+    for (key, val) in spring_data
         network.graph.edge_data[key] = val
     end
 end
@@ -597,13 +597,14 @@ function calc_losses_parallel!(network, candidates, losses,
 end
 
 function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
-    vis=nothing, mutations=20, parallel=false, mutation_strength=0.3,
+    vis=nothing, mutations=20, parallel=true, mutation_strength=0.3,
     simepochs=250)
 
+    if parallel && Threads.nthreads() <= 1
+        @warn "You have set parallel=true but don't have more than one thread assigned to julia!"
+        parallel = false
+    end
     loss_function! = parallel ? calc_losses_parallel! : calc_losses!
-    last_rows = network.row_counts[network.rows]
-    out_positions = [[last_rows ÷ 2], [last_rows ÷ 2]]
-    out_changes = [[1], [-1]]
 
     candidates = Array{Dict{Tuple{Int64,Int64},Spring}}(undef, mutations)
     [candidates[i] = Dict() for i in eachindex(candidates)]
@@ -662,4 +663,4 @@ function Trainer(network::Network)
     return Trainer([behaviour_pull, behaviour_pull])
 end
 
-#end
+end
