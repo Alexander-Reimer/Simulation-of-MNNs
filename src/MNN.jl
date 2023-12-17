@@ -1,6 +1,6 @@
 module MNN
 
-export Network, simulate!, Trainer, train!, Visualizer, netpush!, netpull!, draw!, reset!
+export Network, simulate!, Trainer, train!, Visualizer, netpush!, netpull!, draw!, reset!, train_pps!, PPS
 
 using DifferentialEquations
 using GLMakie
@@ -52,8 +52,22 @@ end
 NoModifier() = (network, delta) -> nothing
 NoBehaviour() = Behaviour(Dict(), false, NoModifier())
 
+abstract type Optimization end
+
+mutable struct PPS <: Optimization
+    initialized::Bool
+    init::Float64
+    increment::Float64
+    # base_loss::Float64
+    selected::Set
+    # new_spring_data::Dict{Tuple{Int64,Int64},Spring}
+end
+
+PPS() = PPS(false, 1.15, 1.0, Set())
+
 mutable struct Trainer
     behaviours::Vector{Behaviour}
+    optimization::Optimization
 end
 
 function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
@@ -320,8 +334,8 @@ function addvelocity!(network::Network, acc::Matrix, v::Vector)
     end
 end
 
-netpush!(network, acc) = addvelocity!(network, acc, [0.005, 0])
-netpull!(network, acc) = addvelocity!(network, acc, [-0.005, 0])
+netpush!(network, acc) = addvelocity!(network, acc, [0.1, 0])
+netpull!(network, acc) = addvelocity!(network, acc, [-0.1, 0])
 
 moddx = 1.0
 function changemoddx()
@@ -346,12 +360,12 @@ function simulation_step(accelerations, velocities, positions, p, t)
     diff = MVector{2,Float64}(undef)
     positionsn = MVector{2,Float64}(undef)
     # diff = Vector{Float64}(undef,2)
-    for neuron in vertices(graph)
+    @fastmath @inbounds @simd ivdep for neuron in vertices(graph)
         if graph[neuron].movable  # is movable
             force .= [0.0, 0.0]
             positionsn .= positions[:, neuron]
 
-            for neighbor in neighbors(graph, neuron)
+            @simd ivdep for neighbor in neighbors(graph, neuron)
                 spring = graph[neighbor, neuron]
                 diff = positionsn - positions[:, neighbor]
                 dist = norm(diff)
@@ -379,7 +393,9 @@ function simulate!(network, tspan; modifier::Function=NoModifier())
     prob = SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p)
     #prob = SteadyStateProblem(SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p))
 
-    sol = solve(prob, AutoTsit5(Rosenbrock23()), saveat = tspan[2])
+    sol = solve(prob, AutoTsit5(Rosenbrock23()), 
+        # saveat = tspan[2]
+    )
     # , reltol=1e-7; saveat = tspan[2])
     #sol = solve(prob, DynamicSS(Tsit5()))
     mat = hcat(sol.u[:]...)
@@ -421,6 +437,8 @@ function draw!(r)
     global oy = Observable(zeros(Float64, Int(size(r)[1] / 2)))
     GLMakie.scatter!(ox, oy, marker=:circle, markersize=25, color=:blue)
     display(fig)
+    sleep(1)
+    @info "Started!"
 
     x = zeros(Float64, Int(size(r)[1] / 2))
     y = zeros(Float64, Int(size(r)[1] / 2))
@@ -436,7 +454,7 @@ function draw!(r)
         ox[] = x
         oy[] = y
 
-        sleep(0.008)
+        sleep(0.08)
     end
 
 end
@@ -474,7 +492,7 @@ end
 function loss(network::Network, behaviour::Behaviour)
     s = 0
     for (neuron_i, goal_pos) in behaviour.goals
-        neuron = get_neuron(network, neuron_i)
+        # neuron = get_neuron(network, neuron_i)
         if behaviour.relative
             start_pos = network.start_positions[neuron_i]
             goal_pos += start_pos
@@ -731,6 +749,73 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
     # @info "Final loss: $(best_los)"
 end
 
+function select_spring(spring_data, selected::Set)
+    # spring_data = get_spring_constants(network)
+    if length(spring_data) == length(selected)
+        return nothing
+    end
+
+    local s
+    while true
+        s = rand(spring_data).second
+        if !(s in selected)
+            push!(selected, s)
+            break
+        end
+    end
+    return s
+end
+
+function pps_init!(network::Network, opt::PPS)
+    spring_data = get_spring_constants(network)
+    for (k, _) in spring_data
+        spring_data[k].spring_constant = opt.init
+    end
+end
+
+function train_pps!(network::Network, epochs::Int, trainer::Trainer)
+    opt = trainer.optimization
+    if !opt.initialized
+        pps_init!(network, opt)
+        opt.initialized = true
+    end
+    spring_data = deepcopy(get_spring_constants(network))
+    # unnneccessary because ref?
+    # set_spring_data!(network, spring_data)
+
+    base_loss = calc_loss(network, spring_data, trainer.behaviours)
+    # selected = Set()
+    new_spring_data = deepcopy(spring_data)
+    @info "Base loss: $base_loss"
+    while true
+        spring = select_spring(new_spring_data, opt.selected)
+        if spring === nothing
+            opt.increment > 0 ? opt.increment *= -1 : opt.increment *= -0.9
+            opt.selected = Set()
+            continue
+        end
+        spring.spring_constant = opt.increment + spring.spring_constant
+        loss = calc_loss(network, new_spring_data, trainer.behaviours)
+        if loss < base_loss
+            # new_spring_data = deepcopy(spring_data)
+            # while true
+            #     increment *= 0.9
+            #     spring.spring_constant = increment + spring.spring_constant
+            #     loss = calc_loss(network, spring_data, trainer.behaviours)
+                
+            # end
+            spring_data = deepcopy(new_spring_data)
+            base_loss = loss
+        else
+            new_spring_data = deepcopy(spring_data)
+        end
+        epochs -= 1
+        @info "Epochs left: $epochs, base loss: $base_loss, loss: $loss, increment: $(opt.increment)"
+        epochs == 0 && break
+    end
+    set_spring_data!(network, spring_data)
+end
+
 function train!(network::Network, epochs::Int, trainer::Trainer;
     vis=nothing, mutations=20, parallel=false, mutation_strength=0.3,
     simepochs=250)
@@ -749,21 +834,40 @@ function behaviour_unmoving(network::Network)
     return Behaviour(goals, true, NoModifier())
 end
 
-function Trainer(network::Network)
+function Trainer(network::Network, opt)
+    return Trainer(behaviours(network), opt)
+end
+
+function behaviours(network::Network)
     col = network.columns
     rows = network.row_counts[col]
 
     mid_neuron_i = get_neuron_index(network, col, rows ÷ 2)
 
     behaviour_pull = behaviour_unmoving(network)
-    behaviour_pull.goals[mid_neuron_i] = [-1.0, 0.0]
-    behaviour_pull.modifier = netpush!
+    behaviour_pull.goals[mid_neuron_i] = [0.5, 0.0]
+    behaviour_pull.modifier = netpull!
 
     behaviour_push = behaviour_unmoving(network)
-    behaviour_push.goals[mid_neuron_i] = [1.0, 0.0]
-    behaviour_push.modifier = netpull!
+    behaviour_push.goals[mid_neuron_i] = [-0.5, 0.0]
+    behaviour_push.modifier = netpush!
 
-    return Trainer([behaviour_pull, behaviour_pull])
+    return [behaviour_pull, behaviour_push]
+end
+
+function show(net::Network, modifier::Function=NoModifier())
+    reset!(net)
+    r = simulate!(net, (0.0, 100.0), modifier=modifier)
+    draw!(r)
+end
+
+function bench()
+    # global modswitch
+    # m = modswitch ? netpush! : netpull!
+    net = Network(5, 3)
+    changemoddx()
+    simulate!(net, (0, 100), modifier = netmodrand!)
+    # modswitch = !modswitch
 end
 
 end
