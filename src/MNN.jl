@@ -8,7 +8,11 @@ using Graphs
 using LinearAlgebra
 using MetaGraphsNext
 using Observables
+<<<<<<< HEAD
+using Evolutionary
+=======
 using StaticArrays
+>>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
 
 struct Neuron
     movable::Bool
@@ -584,29 +588,47 @@ function set_spring_data!(network::Network, spring_data::Dict)
     end
 end
 
+function set_spring_data!(network::Network, spring_data::Vector{Float64})
+    springs = Tuple.(edges(network.graph))
+    for i =  1:length(springs)
+        spring = springs[i]
+        network.graph.edge_data[spring].spring_constant = spring_data[i]
+    end
+end
+
 function get_spring_constants(network::Network)
     return network.graph.edge_data
 end
 
-function mutate!(spring_data::Dict, strength=0.1)
-    for x in spring_data
-        spring = x[2]
-        spring.spring_constant += strength * (rand() - 0.5)
+function get_spring_constants_vec(network::Network)
+    spring_constants = zeros(Float64, ne(network.graph))
+    springs = Tuple.(edges(network.graph))
+
+    for i = 1:length(springs)
+        spring_constants[i] = network.graph[springs[i][1], springs[i][2]].spring_constant
+    end
+
+    return spring_constants
+end
+
+function mutate!(spring_data::Vector, strength=0.1)
+    for i in eachindex(spring_data)
+        spring_data[i] += strength * (rand() - 0.5)
     end
     return spring_data
 end
 
-function create_mutation(spring_data::Dict, strength=0.1)
+function create_mutation(spring_data::Vector{Float64}, strength=0.1)
     return mutate!(deepcopy(spring_data), strength)
 end
 
-function create_mutations!(spring_data::Dict{Tuple{Int64,Int64},Spring}, mutations::Vector{Dict{Tuple{Int64,Int64},Spring}}; strength=0.1)
+function create_mutations!(spring_data::Vector{Float64}, mutations::Vector{Vector{Float64}}; strength=0.1)
     for i in eachindex(mutations)
         mutations[i] = create_mutation(spring_data, strength)
     end
 end
 
-function calc_loss(network::Network, spring_data::Dict{Tuple{Int64,Int64},Spring},
+function calc_loss(network::Network, spring_data::Vector{Float64},
     behaviours::Vector{Behaviour};
     vis=nothing, delta=0.01, epochs=500)
 
@@ -620,6 +642,19 @@ function calc_loss(network::Network, spring_data::Dict{Tuple{Int64,Int64},Spring
     end
 
     return l / length(behaviours)
+end
+
+function calc_loss(spring_vec::Vector)
+    l = 0
+    set_spring_data!(network, spring_vec)
+    for b in behaviours
+        reset!(network)
+        simulate_b!(network, delta, epochs, vis=vis, behaviour=b)
+        #println(network.positions)
+        l += loss(network, b)
+    end
+
+    return l
 end
 
 function calc_losses!(network, candidates, losses,
@@ -726,14 +761,20 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
     end
     loss_function! = parallel ? calc_losses_parallel! : calc_losses!
 
-    candidates = Array{Dict{Tuple{Int64,Int64},Spring}}(undef, mutations)
-    [candidates[i] = Dict() for i in eachindex(candidates)]
-    candidate_losses = Vector{Float64}(undef, mutations)
-    best_candidate = deepcopy(get_spring_constants(network))
+    candidates = [rand(ne(network.graph)) for i in 1:mutations]
+
+    best_candidate = deepcopy(get_spring_constants_vec(network))
     best_loss = calc_loss(network, best_candidate, behaviours, epochs=simepochs)
+<<<<<<< HEAD
+    candidate_losses = Vector{Float64}(undef, mutations)
+
+=======
     @info "Init loss: $best_loss"
+>>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
     for i = 1:epochs
+        #c = copy(candidates)
         create_mutations!(best_candidate, candidates, strength=mutation_strength)
+        #println(candidates-c)
         loss_function!(network, candidates, candidate_losses, behaviours;
             vis=vis, epochs=simepochs)
         best_i = argmin(candidate_losses)
@@ -817,7 +858,7 @@ function train_pps!(network::Network, epochs::Int, trainer::Trainer)
 end
 
 function train!(network::Network, epochs::Int, trainer::Trainer;
-    vis=nothing, mutations=20, parallel=false, mutation_strength=0.3,
+    vis=nothing, mutations=20, parallel=false, mutation_strength=0.01,
     simepochs=250)
     train!(network, epochs, trainer.behaviours, vis=vis, mutations=mutations,
         parallel=parallel, mutation_strength=mutation_strength, simepochs=simepochs)
@@ -870,4 +911,29 @@ function bench()
     # modswitch = !modswitch
 end
 
+<<<<<<< HEAD
+function modifier1!(network, acc)
+    acc[:,1] += [-0.12, -0.05] * 0.01
+    acc[:,2] += [0.07, 0.14] * 0.01
+    acc[:,3] += [-0.41, 0.34] * 0.01
+    acc[:,4] += [-0.09, -0.44] * 0.01
 end
+
+function RandTrainer(network) # Random behaviours for benchmarking of a Network with size (11, 5)
+    col = network.columns
+    rows = network.row_counts[col]
+
+    behaviour1 = behaviour_unmoving(network)
+    behaviour1.goals[46] = [0.12, 0.43]
+    behaviour1.goals[47] = [-0.41, 0.38]
+    behaviour1.goals[48] = [0.19, -0.28]
+    behaviour1.goals[49] = [-0.47, -0.36]
+    behaviour1.modifier = modifier1!
+
+    return Trainer([behaviour1])
+end
+
+#end
+=======
+end
+>>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
