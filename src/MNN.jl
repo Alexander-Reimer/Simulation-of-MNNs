@@ -345,7 +345,6 @@ function simulation_step(accelerations, velocities, positions, p, t)
     force = MVector{2,Float64}(undef)
     diff = MVector{2,Float64}(undef)
     positionsn = MVector{2,Float64}(undef)
-    # force = [0.0, 0.0]
     # diff = Vector{Float64}(undef,2)
     for neuron in vertices(graph)
         if graph[neuron].movable  # is movable
@@ -354,13 +353,12 @@ function simulation_step(accelerations, velocities, positions, p, t)
 
             for neighbor in neighbors(graph, neuron)
                 spring = graph[neighbor, neuron]
-                # positionsj = view(positions, :, neighbor)
-                # for coord in positions[:, neighbor]
-                    diff = positionsn .- view(positions, :, neighbor)
-                    dist = norm(diff)
-                    diff = springforce(dist - spring.length, spring.spring_constant) * diff / dist
-                    force += diff
-                # end
+                diff = positionsn - positions[:, neighbor]
+                dist = norm(diff)
+                # diff .= springforce(dist - spring.length, spring.spring_constant) .* diff / dist
+                diff *= springforce(dist - spring.length, spring.spring_constant)
+                diff /= dist
+                force += diff
             end
             force -= gam * view(velocities, :, neuron) # damping
             #f[2] -= 0.1 #gravity
@@ -707,11 +705,11 @@ function Trainer(network::Network)
 end
 
 function bench()
-    global modswitch
+    # global modswitch
     # m = modswitch ? netpush! : netpull!
-    net = Network(17, 9)
+    net = Network(5, 3)
     changemoddx()
-    simulate!(net, (0, 200), modifier = netmodrand!)
+    simulate!(net, (0, 100), modifier = netmodrand!)
     # modswitch = !modswitch
 end
 
