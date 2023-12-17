@@ -1,4 +1,4 @@
-#module MNN
+module MNN
 
 export Network, simulate!, Trainer, train!, Visualizer, netpush!, netpull!, draw!, reset!
 
@@ -8,7 +8,11 @@ using Graphs
 using LinearAlgebra
 using MetaGraphsNext
 using Observables
+<<<<<<< HEAD
 using Evolutionary
+=======
+using StaticArrays
+>>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
 
 struct Neuron
     movable::Bool
@@ -61,8 +65,8 @@ function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
     col_fixed = Vector{Bool}(undef, columns)
     neuron_count = 0
     start_positions = Dict{Int,Vector{Number}}()
-    positions = zeros(Float64,0,0)
-    velocities = zeros(Float64,0,0)
+    positions = zeros(Float64, 0, 0)
+    velocities = zeros(Float64, 0, 0)
     Network(graph, rows, row_counts, col_fixed, columns, neuron_count, xdist,
         calc_ydist(xdist), start_positions, positions, velocities)
 end
@@ -120,8 +124,8 @@ function set_neuron_positions!(network::Network, column::Int)
         end
 
         i = get_neuron_index(network, column, row)
-        network.positions[1,i] = xpos
-        network.positions[2,i] = ypos
+        network.positions[1, i] = xpos
+        network.positions[2, i] = ypos
         network.start_positions[i] = [xpos, ypos]
     end
 end
@@ -129,7 +133,7 @@ end
 function set_neuron_velocities!(network::Network, column::Int)
     for row in network.row_counts[column]
         n = get_neuron_index(network, column, row)
-        network.velocities[:,n] = [0.0, 0.0] #sollte das nicht network.velocities sein????????????????????????????????????????????????????????????????????????????????????????????????????????
+        network.velocities[:, n] = [0.0, 0.0] #sollte das nicht network.velocities sein????????????????????????????????????????????????????????????????????????????????????????????????????????
     end
 end
 
@@ -215,7 +219,6 @@ end
 function initialize_graph!(network::Network)
     initialize_neurons!(network)
     initialize_springs!(network)
-    #print_graph(network)
 end
 
 """
@@ -230,7 +233,6 @@ function Network(columns, rows)
     graph = new_graph()
     network = Network(graph, rows, columns)
     initialize_graph!(network)
-    print_graph(network)
     return network
 end
 
@@ -305,7 +307,7 @@ function update_position!(network::Network, n::Int, delta::Number)
         return
     end
     f = calculate_force(network, n) * delta
-    network.velocities[:,n] .+= f
+    network.velocities[:, n] .+= f
     neuron.velocity .*= 0.95
     neuron.pos .+= neuron.velocity * delta
 end
@@ -318,88 +320,129 @@ end
 
 function addvelocity!(network::Network, acc::Matrix, v::Vector)
     for row in 1:network.row_counts[1]
-        acc[:,row] += v
+        acc[:, row] += v
     end
 end
 
-netpush!(network, acc) = addvelocity!(network, acc, [0.005,0])
-netpull!(network, acc) = addvelocity!(network, acc, [-0.005,0])
+netpush!(network, acc) = addvelocity!(network, acc, [0.005, 0])
+netpull!(network, acc) = addvelocity!(network, acc, [-0.005, 0])
+
+moddx = 1.0
+function changemoddx()
+    global moddx
+    moddx = (rand() + 1) * 0.001 * rand(-1:2:1)
+end 
+
+function netmodrand!(network, acc)
+    global moddx
+    addvelocity!(network, acc, [moddx, 0.0])
+end
 
 
 springforce(x, k) = -x * (k + x * x)
 
 function simulation_step(accelerations, velocities, positions, p, t)
     (network, gam, modifier) = p
-    sim = network.graph
-    for v in vertices(sim)
-        f = [0.0, 0.0]
-        if sim[v].movable  # is movable
-            neuros = neighbors(sim, v)
-            springs = collect(sim[neighbor, v] for neighbor in neuros)
-            for j = 1 : length(springs)
-                
-                dif = positions[:, v] - positions[:, neuros[j]]
-                dist = norm(dif)
-                f += springforce((dist - springs[j].length), springs[j].spring_constant)  * dif / dist
+    # velocities = network.velocities
+    # positions = network.positions
+    graph = network.graph
+    force = MVector{2,Float64}(undef)
+    diff = MVector{2,Float64}(undef)
+    positionsn = MVector{2,Float64}(undef)
+    # diff = Vector{Float64}(undef,2)
+    for neuron in vertices(graph)
+        if graph[neuron].movable  # is movable
+            force .= [0.0, 0.0]
+            positionsn .= positions[:, neuron]
+
+            for neighbor in neighbors(graph, neuron)
+                spring = graph[neighbor, neuron]
+                diff = positionsn - positions[:, neighbor]
+                dist = norm(diff)
+                # diff .= springforce(dist - spring.length, spring.spring_constant) .* diff / dist
+                diff *= springforce(dist - spring.length, spring.spring_constant)
+                diff /= dist
+                force += diff
             end
-            f -= gam*velocities[:,v] # damping
+            force -= gam * view(velocities, :, neuron) # damping
             #f[2] -= 0.1 #gravity
-            accelerations[:,v] = f
+            accelerations[:, neuron] = force
             # accelerations[1,v] = f[1]
             # accelerations[2,v] = f[2]
         end
     end
+
     modifier(network, accelerations)
 end
 
+
+
 function simulate!(network, tspan; modifier::Function=NoModifier())
-    p = (network,0.1,modifier)
+    p = (network, 0.1, modifier)
 
     prob = SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p)
     #prob = SteadyStateProblem(SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p))
 
-    sol = solve(prob, reltol=1e-7; saveat = 0.1)
+    sol = solve(prob, AutoTsit5(Rosenbrock23()), saveat = tspan[2])
+    # , reltol=1e-7; saveat = tspan[2])
     #sol = solve(prob, DynamicSS(Tsit5()))
     mat = hcat(sol.u[:]...)
-    pos = mat[Int(size(mat)[1]/2+1):size(mat)[1],size(mat)[2]]
+    pos = mat[Int(size(mat)[1] / 2 + 1):size(mat)[1], size(mat)[2]]
 
-    positions = zeros(Float64, 2, Int(length(pos)/2))
-    for i = 1:length(pos)
-        if i%2 == 0
-            positions[2,Int(i/2)] = pos[i]
+    positions = zeros(Float64, 2, Int(length(pos) / 2))
+    for i in eachindex(pos)
+        if i % 2 == 0
+            positions[2, Int(i / 2)] = pos[i]
         else
-            positions[1,Int((i+1)/2)] = pos[i]
+            positions[1, Int((i + 1) / 2)] = pos[i]
         end
     end
     network.positions = positions
-    return mat[Int(size(mat)[1]/2+1):size(mat)[1],:]
+    return mat[Int(size(mat)[1] / 2 + 1):size(mat)[1], :]
 end
+
+# function simulate!(network, tspan; modifier::Function=NoModifier())
+#     p = (network, 0.1, modifier)
+
+#     prob = SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p)
+
+#     sol = solve(prob, reltol=1e-7, maxiters=500; saveat = tspan[2])
+#     mat = hcat(sol.u[:]...)
+#     pos = mat[Int(size(mat)[1] / 2 + 1):size(mat)[1], size(mat)[2]]
+
+#     positions = zeros(Float64, 2, Int(length(pos) / 2))
+#     positions[1, :] = pos[1:2:end]
+#     positions[2, :] = pos[2:2:end]
+
+#     network.positions .= positions
+#     return mat[Int(size(mat)[1] / 2 + 1):size(mat)[1], :]
+# end
 
 function draw!(r)
     fig = GLMakie.Figure()
-    ax = Axis(fig[1,1]) 
-    global ox = Observable(zeros(Float64, Int(size(r)[1] / 2 )))
-    global oy = Observable(zeros(Float64, Int(size(r)[1] / 2 )))
-    GLMakie.scatter!(ox,oy, marker = :circle, markersize = 25, color = :blue)
+    ax = Axis(fig[1, 1])
+    global ox = Observable(zeros(Float64, Int(size(r)[1] / 2)))
+    global oy = Observable(zeros(Float64, Int(size(r)[1] / 2)))
+    GLMakie.scatter!(ox, oy, marker=:circle, markersize=25, color=:blue)
     display(fig)
 
-    x = zeros(Float64, Int(size(r)[1] / 2 ))
-    y = zeros(Float64, Int(size(r)[1] / 2 ))
+    x = zeros(Float64, Int(size(r)[1] / 2))
+    y = zeros(Float64, Int(size(r)[1] / 2))
     for i = 1:(size(r)[2])
         for j = 1:size(r)[1]
-            if j%2 == 0
-                y[Int(j/2)] = r[j,i]
+            if j % 2 == 0
+                y[Int(j / 2)] = r[j, i]
             else
-                x[Int(j/2+0.5)] = r[j,i]
+                x[Int(j / 2 + 0.5)] = r[j, i]
             end
-            
+
         end
         ox[] = x
         oy[] = y
 
         sleep(0.008)
     end
-    
+
 end
 
 function simulate!(network::Network, delta::Number, epochs::Int;
@@ -428,8 +471,8 @@ function simulate_b!(network::Network, delta::Number, epochs::Int;
     vis::Union{Visualizer,Nothing}=nothing, showfps::Bool=false,
     behaviour::Behaviour=NoBehaviour())
     #simulate!(network, delta, epochs; vis=vis, showfps=showfps,
-        #modifier=behaviour.modifier)
-    simulate!(network, (0.0,100.0), modifier=behaviour.modifier)
+    #modifier=behaviour.modifier)
+    simulate!(network, (0.0, 100.0), modifier=behaviour.modifier)
 end
 
 function loss(network::Network, behaviour::Behaviour)
@@ -580,7 +623,7 @@ function calc_loss(network::Network, spring_data::Vector{Float64},
         l += loss(network, b)
     end
 
-    return l
+    return l / length(behaviours)
 end
 
 function calc_loss(spring_vec::Vector)
@@ -704,8 +747,12 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
 
     best_candidate = deepcopy(get_spring_constants_vec(network))
     best_loss = calc_loss(network, best_candidate, behaviours, epochs=simepochs)
+<<<<<<< HEAD
     candidate_losses = Vector{Float64}(undef, mutations)
 
+=======
+    @info "Init loss: $best_loss"
+>>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
     for i = 1:epochs
         #c = copy(candidates)
         create_mutations!(best_candidate, candidates, strength=mutation_strength)
@@ -757,9 +804,10 @@ function Trainer(network::Network)
     behaviour_push.goals[mid_neuron_i] = [1.0, 0.0]
     behaviour_push.modifier = netpull!
 
-    return Trainer([behaviour_pull, behaviour_push])
+    return Trainer([behaviour_pull, behaviour_pull])
 end
 
+<<<<<<< HEAD
 function modifier1!(network, acc)
     acc[:,1] += [-0.12, -0.05] * 0.01
     acc[:,2] += [0.07, 0.14] * 0.01
@@ -782,3 +830,6 @@ function RandTrainer(network) # Random behaviours for benchmarking of a Network 
 end
 
 #end
+=======
+end
+>>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
