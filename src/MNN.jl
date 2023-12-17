@@ -8,11 +8,7 @@ using Graphs
 using LinearAlgebra
 using MetaGraphsNext
 using Observables
-<<<<<<< HEAD
-using Evolutionary
-=======
 using StaticArrays
->>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
 
 struct Neuron
     movable::Bool
@@ -765,12 +761,8 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
 
     best_candidate = deepcopy(get_spring_constants_vec(network))
     best_loss = calc_loss(network, best_candidate, behaviours, epochs=simepochs)
-<<<<<<< HEAD
     candidate_losses = Vector{Float64}(undef, mutations)
 
-=======
-    @info "Init loss: $best_loss"
->>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
     for i = 1:epochs
         #c = copy(candidates)
         create_mutations!(best_candidate, candidates, strength=mutation_strength)
@@ -911,29 +903,4 @@ function bench()
     # modswitch = !modswitch
 end
 
-<<<<<<< HEAD
-function modifier1!(network, acc)
-    acc[:,1] += [-0.12, -0.05] * 0.01
-    acc[:,2] += [0.07, 0.14] * 0.01
-    acc[:,3] += [-0.41, 0.34] * 0.01
-    acc[:,4] += [-0.09, -0.44] * 0.01
 end
-
-function RandTrainer(network) # Random behaviours for benchmarking of a Network with size (11, 5)
-    col = network.columns
-    rows = network.row_counts[col]
-
-    behaviour1 = behaviour_unmoving(network)
-    behaviour1.goals[46] = [0.12, 0.43]
-    behaviour1.goals[47] = [-0.41, 0.38]
-    behaviour1.goals[48] = [0.19, -0.28]
-    behaviour1.goals[49] = [-0.47, -0.36]
-    behaviour1.modifier = modifier1!
-
-    return Trainer([behaviour1])
-end
-
-#end
-=======
-end
->>>>>>> a6682f34765f5d2b6dccad16737ebe1df463fb20
