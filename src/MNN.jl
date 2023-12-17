@@ -640,19 +640,6 @@ function calc_loss(network::Network, spring_data::Vector{Float64},
     return l / length(behaviours)
 end
 
-function calc_loss(spring_vec::Vector)
-    l = 0
-    set_spring_data!(network, spring_vec)
-    for b in behaviours
-        reset!(network)
-        simulate_b!(network, delta, epochs, vis=vis, behaviour=b)
-        #println(network.positions)
-        l += loss(network, b)
-    end
-
-    return l
-end
-
 function calc_losses!(network, candidates, losses,
     behaviours::Vector{Behaviour}; vis=nothing, delta=0.01, epochs=250)
 
@@ -788,15 +775,16 @@ function select_spring(spring_data, selected::Set)
         return nothing
     end
 
-    local s
+    local i
+
     while true
-        s = rand(spring_data).second
-        if !(s in selected)
-            push!(selected, s)
+        i = rand(1:length(spring_data))
+        if !(i in selected)
+            push!(selected, i)
             break
         end
     end
-    return s
+    return spring_data[i]
 end
 
 function pps_init!(network::Network, opt::PPS)
@@ -812,7 +800,7 @@ function train_pps!(network::Network, epochs::Int, trainer::Trainer)
         pps_init!(network, opt)
         opt.initialized = true
     end
-    spring_data = deepcopy(get_spring_constants(network))
+    spring_data = deepcopy(get_spring_constants_vec(network))
     # unnneccessary because ref?
     # set_spring_data!(network, spring_data)
 
@@ -827,13 +815,13 @@ function train_pps!(network::Network, epochs::Int, trainer::Trainer)
             opt.selected = Set()
             continue
         end
-        spring.spring_constant = opt.increment + spring.spring_constant
+        spring = opt.increment + spring
         loss = calc_loss(network, new_spring_data, trainer.behaviours)
         if loss < base_loss
             # new_spring_data = deepcopy(spring_data)
             # while true
             #     increment *= 0.9
-            #     spring.spring_constant = increment + spring.spring_constant
+            #     spring = increment + spring
             #     loss = calc_loss(network, spring_data, trainer.behaviours)
                 
             # end
@@ -901,6 +889,42 @@ function bench()
     changemoddx()
     simulate!(net, (0, 100), modifier = netmodrand!)
     # modswitch = !modswitch
+end
+
+
+function modifier1!(network, acc)
+    acc[:,1] += [-0.12, -0.05] * 0.01
+    acc[:,2] += [0.07, 0.14] * 0.01
+    acc[:,3] += [-0.41, 0.34] * 0.01
+    acc[:,4] += [-0.09, -0.44] * 0.01
+end
+
+function modifier2!(network, acc)
+    acc[:,1] += [-0.32, 0.36] * 0.01
+    acc[:,2] += [0.45, 0.01] * 0.01
+    acc[:,3] += [-0.48, -0.34] * 0.01
+    acc[:,4] += [-0.30, -0.45] * 0.01
+end
+
+function RandTrainer(network) # Random behaviours for benchmarking of a Network with size (11, 5)
+    col = network.columns
+    rows = network.row_counts[col]
+
+    behaviour1 = behaviour_unmoving(network)
+    behaviour1.goals[46] = [0.12, 0.43]
+    behaviour1.goals[47] = [-0.41, 0.38]
+    behaviour1.goals[48] = [0.19, -0.28]
+    behaviour1.goals[49] = [-0.47, -0.36]
+    behaviour1.modifier = modifier1!
+
+    behaviour2 = behaviour_unmoving(network)
+    behaviour2.goals[46] = [-0.38, 0.17]
+    behaviour2.goals[47] = [-0.21, -0.10]
+    behaviour2.goals[48] = [0.29, -0.34]
+    behaviour2.goals[49] = [-0.11, 0.27]
+    behaviour2.modifier = modifier2!
+
+    return Trainer([behaviour1, behaviour2])
 end
 
 end
