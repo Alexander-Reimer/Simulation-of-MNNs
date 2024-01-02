@@ -2,12 +2,15 @@ module MNN
 
 export Network, simulate!, Trainer, train!, Visualizer, netpush!, netpull!, draw!, reset!, train_pps!, PPS
 
+# using ..PPSOptimizer
+using AngleBetweenVectors
 using DifferentialEquations
 using GLMakie
 using Graphs
 using LinearAlgebra
 using MetaGraphsNext
 using Observables
+# using Revise
 using StaticArrays
 
 struct Neuron
@@ -53,17 +56,6 @@ NoModifier() = (network, delta) -> nothing
 NoBehaviour() = Behaviour(Dict(), false, NoModifier())
 
 abstract type Optimization end
-
-mutable struct PPS <: Optimization
-    initialized::Bool
-    init::Float64
-    increment::Float64
-    # base_loss::Float64
-    selected::Set
-    # new_spring_data::Dict{Tuple{Int64,Int64},Spring}
-end
-
-PPS() = PPS(false, 1.15, 1.0, Set())
 
 mutable struct Trainer
     behaviours::Vector{Behaviour}
@@ -394,7 +386,7 @@ function simulate!(network, tspan; modifier::Function=NoModifier())
     #prob = SteadyStateProblem(SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p))
 
     sol = solve(prob, AutoTsit5(Rosenbrock23()), 
-        # saveat = tspan[2]
+        saveat = tspan[2]
     )
     # , reltol=1e-7; saveat = tspan[2])
     #sol = solve(prob, DynamicSS(Tsit5()))
@@ -491,6 +483,7 @@ end
 
 function loss(network::Network, behaviour::Behaviour)
     s = 0
+    length(behaviour.goals) == 0 && @warn "No goals in behaviour!"
     for (neuron_i, goal_pos) in behaviour.goals
         # neuron = get_neuron(network, neuron_i)
         if behaviour.relative
@@ -607,37 +600,25 @@ function get_spring_constants_vec(network::Network)
     return spring_constants
 end
 
-function mutate!(spring_data::Vector, strength=0.1)
-    for i in eachindex(spring_data)
-        spring_data[i] += strength * (rand() - 0.5)
+function calc_loss(network::Network, behaviours::Vector{Behaviour}; vis=nothing, delta=0.01, epochs=500)
+    l = 0
+    for b in behaviours
+        reset!(network)
+        simulate_b!(network, delta, epochs, vis=vis, behaviour=b)
+        l += loss(network, b)
     end
-    return spring_data
-end
-
-function create_mutation(spring_data::Vector{Float64}, strength=0.1)
-    return mutate!(deepcopy(spring_data), strength)
-end
-
-function create_mutations!(spring_data::Vector{Float64}, mutations::Vector{Vector{Float64}}; strength=0.1)
-    for i in eachindex(mutations)
-        mutations[i] = create_mutation(spring_data, strength)
+    if isnan(l)
+        @info "l: $l, length: $(length(behaviours))"
     end
+    return l / length(behaviours)
 end
 
 function calc_loss(network::Network, spring_data::Vector{Float64},
     behaviours::Vector{Behaviour};
     vis=nothing, delta=0.01, epochs=500)
 
-    l = 0
     set_spring_data!(network, spring_data)
-    for b in behaviours
-        reset!(network)
-        simulate_b!(network, delta, epochs, vis=vis, behaviour=b)
-        #println(network.positions)
-        l += loss(network, b)
-    end
-
-    return l / length(behaviours)
+    return calc_loss(network, behaviours, vis=vis, delta=delta, epochs=epochs)
 end
 
 function calc_losses!(network, candidates, losses,
@@ -734,114 +715,50 @@ function calculate_deltas(network, behaiviour)
     return deltas
 end
 
-function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
-    vis=nothing, mutations=20, parallel=true, mutation_strength=0.3,
-    simepochs=250)
+# function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour};
+#     vis=nothing, mutations=20, parallel=true, mutation_strength=0.3,
+#     simepochs=250)
 
-    if parallel && Threads.nthreads() <= 1
-        @warn "You have set parallel=true but don't have more than one thread assigned to julia!"
-        parallel = false
-    end
-    loss_function! = parallel ? calc_losses_parallel! : calc_losses!
+#     if parallel && Threads.nthreads() <= 1
+#         @warn "You have set parallel=true but don't have more than one thread assigned to julia!"
+#         parallel = false
+#     end
+#     loss_function! = parallel ? calc_losses_parallel! : calc_losses!
 
-    candidates = [rand(ne(network.graph)) for i in 1:mutations]
+#     candidates = [rand(ne(network.graph)) for i in 1:mutations]
 
-    best_candidate = deepcopy(get_spring_constants_vec(network))
-    best_loss = calc_loss(network, best_candidate, behaviours, epochs=simepochs)
-    candidate_losses = Vector{Float64}(undef, mutations)
+#     best_candidate = deepcopy(get_spring_constants_vec(network))
+#     best_loss = calc_loss(network, best_candidate, behaviours, epochs=simepochs)
+#     candidate_losses = Vector{Float64}(undef, mutations)
 
-    for i = 1:epochs
-        #c = copy(candidates)
-        create_mutations!(best_candidate, candidates, strength=mutation_strength)
-        #println(candidates-c)
-        loss_function!(network, candidates, candidate_losses, behaviours;
-            vis=vis, epochs=simepochs)
-        best_i = argmin(candidate_losses)
-        if candidate_losses[best_i] < best_loss
-            best_loss = candidate_losses[best_i]
-            best_candidate = deepcopy(candidates[best_i])
-            @info "\tUpdated!"
-        end
-        @info "Epoch: $i, best loss: $(best_loss)"
-    end
-    set_spring_data!(network, best_candidate)
-    # this call to calc_loss also saves best candidate in network
-    # @info "Final loss: $(best_los)"
-end
+#     for i = 1:epochs
+#         #c = copy(candidates)
+#         create_mutations!(best_candidate, candidates, strength=mutation_strength)
+#         #println(candidates-c)
+#         loss_function!(network, candidates, candidate_losses, behaviours;
+#             vis=vis, epochs=simepochs)
+#         best_i = argmin(candidate_losses)
+#         if candidate_losses[best_i] < best_loss
+#             best_loss = candidate_losses[best_i]
+#             best_candidate = deepcopy(candidates[best_i])
+#             @info "\tUpdated!"
+#         end
+#         @info "Epoch: $i, best loss: $(best_loss)"
+#     end
+#     set_spring_data!(network, best_candidate)
+#     # this call to calc_loss also saves best candidate in network
+#     # @info "Final loss: $(best_los)"
+# end
 
-function select_spring(spring_data, selected::Set)
-    # spring_data = get_spring_constants(network)
-    if length(spring_data) == length(selected)
-        return nothing
-    end
+# function train!(network::Network, epochs::Int, trainer::Trainer;
+#     vis=nothing, mutations=20, parallel=false, mutation_strength=0.01,
+#     simepochs=250)
+#     train!(network, epochs, trainer.behaviours, vis=vis, mutations=mutations,
+#         parallel=parallel, mutation_strength=mutation_strength, simepochs=simepochs)
+# end
 
-    local i
-
-    while true
-        i = rand(1:length(spring_data))
-        if !(i in selected)
-            push!(selected, i)
-            break
-        end
-    end
-    return spring_data[i]
-end
-
-function pps_init!(network::Network, opt::PPS)
-    spring_data = get_spring_constants(network)
-    for (k, _) in spring_data
-        spring_data[k].spring_constant = opt.init
-    end
-end
-
-function train_pps!(network::Network, epochs::Int, trainer::Trainer)
-    opt = trainer.optimization
-    if !opt.initialized
-        pps_init!(network, opt)
-        opt.initialized = true
-    end
-    spring_data = deepcopy(get_spring_constants_vec(network))
-    # unnneccessary because ref?
-    # set_spring_data!(network, spring_data)
-
-    base_loss = calc_loss(network, spring_data, trainer.behaviours)
-    # selected = Set()
-    new_spring_data = deepcopy(spring_data)
-    @info "Base loss: $base_loss"
-    while true
-        spring = select_spring(new_spring_data, opt.selected)
-        if spring === nothing
-            opt.increment > 0 ? opt.increment *= -1 : opt.increment *= -0.9
-            opt.selected = Set()
-            continue
-        end
-        spring = opt.increment + spring
-        loss = calc_loss(network, new_spring_data, trainer.behaviours)
-        if loss < base_loss
-            # new_spring_data = deepcopy(spring_data)
-            # while true
-            #     increment *= 0.9
-            #     spring = increment + spring
-            #     loss = calc_loss(network, spring_data, trainer.behaviours)
-                
-            # end
-            spring_data = deepcopy(new_spring_data)
-            base_loss = loss
-        else
-            new_spring_data = deepcopy(spring_data)
-        end
-        epochs -= 1
-        @info "Epochs left: $epochs, base loss: $base_loss, loss: $loss, increment: $(opt.increment)"
-        epochs == 0 && break
-    end
-    set_spring_data!(network, spring_data)
-end
-
-function train!(network::Network, epochs::Int, trainer::Trainer;
-    vis=nothing, mutations=20, parallel=false, mutation_strength=0.01,
-    simepochs=250)
-    train!(network, epochs, trainer.behaviours, vis=vis, mutations=mutations,
-        parallel=parallel, mutation_strength=mutation_strength, simepochs=simepochs)
+function train!(network::Network, epochs::Int, trainer::Trainer)
+    train!(network, epochs, trainer.behaviours, trainer.optimization)
 end
 
 function behaviour_unmoving(network::Network)
@@ -859,22 +776,71 @@ function Trainer(network::Network, opt)
     return Trainer(behaviours(network), opt)
 end
 
-function behaviours(network::Network)
+function random_distanced_vector(others, m, min_angle)
+    j = 1
+    result = [(rand() - 0.5)*m, (rand() - 0.5)*m]
+    while j <= size(others, 2)
+        α = angle(result, others[:, j])
+        if α < min_angle
+            result .= [(rand() - 0.5)*m, (rand() - 0.5)*m]
+            j = 1
+            # @info "Too close!"
+            continue
+        else
+            j += 1
+        end
+    end
+    return result
+end
+
+function create_behaviours(network::Network, num::Int, min_angle=π/3)
+    behaviours = Vector{Behaviour}(undef, num)
     col = network.columns
     rows = network.row_counts[col]
-
-    mid_neuron_i = get_neuron_index(network, col, rows ÷ 2)
-
-    behaviour_pull = behaviour_unmoving(network)
-    behaviour_pull.goals[mid_neuron_i] = [0.5, 0.0]
-    behaviour_pull.modifier = netpull!
-
-    behaviour_push = behaviour_unmoving(network)
-    behaviour_push.goals[mid_neuron_i] = [-0.5, 0.0]
-    behaviour_push.modifier = netpush!
-
-    return [behaviour_pull, behaviour_push]
+    goals = Array{Float64,3}(undef, 2, num, rows)
+    modifiers = Array{Float64,2}(undef, 2, num)
+    for i in eachindex(behaviours)
+        b_goals = Dict()
+        for row in 2:rows-1
+            neuron_i = get_neuron_index(network, col, row)
+            if rand() < 0.5
+                goals[:, i, row] .= [0.0, 0.0]
+                b_goals[neuron_i] = goals[:, i, row]
+            else
+                others = goals[:, 1:i-1, row]
+                goals[:, i, row] .= random_distanced_vector(others, 1, min_angle)
+                b_goals[neuron_i] = goals[:, i, row]
+            end
+        end
+        others = modifiers[:, 1:i-1]
+        modifier = random_distanced_vector(others, 0.1, min_angle)
+        modifiers[:, i] .= modifier
+        # behaviours[i] = behaviour_unmoving(network)
+        behaviours[i] = Behaviour(b_goals, true, (network, acc) -> addvelocity!(network, acc, modifier))
+    end
+    return behaviours
 end
+
+function Trainer(net::Network, opt::Optimization, num::Int)
+    return Trainer(create_behaviours(net, num), opt)
+end
+
+# function behaviours(network::Network)
+#     col = network.columns
+#     rows = network.row_counts[col]
+
+#     mid_neuron_i = get_neuron_index(network, col, rows ÷ 2)
+
+#     behaviour_pull = behaviour_unmoving(network)
+#     behaviour_pull.goals[mid_neuron_i] = [0.5, 0.0]
+#     behaviour_pull.modifier = netpull!
+
+#     behaviour_push = behaviour_unmoving(network)
+#     behaviour_push.goals[mid_neuron_i] = [-0.5, 0.0]
+#     behaviour_push.modifier = netpush!
+
+#     return [behaviour_pull, behaviour_push]
+# end
 
 function show(net::Network, modifier::Function=NoModifier())
     reset!(net)
@@ -891,40 +857,43 @@ function bench()
     # modswitch = !modswitch
 end
 
+include("PPSOptimizer.jl")
+include("Evolution.jl")
 
-function modifier1!(network, acc)
-    acc[:,1] += [-0.12, -0.05] * 0.01
-    acc[:,2] += [0.07, 0.14] * 0.01
-    acc[:,3] += [-0.41, 0.34] * 0.01
-    acc[:,4] += [-0.09, -0.44] * 0.01
-end
 
-function modifier2!(network, acc)
-    acc[:,1] += [-0.32, 0.36] * 0.01
-    acc[:,2] += [0.45, 0.01] * 0.01
-    acc[:,3] += [-0.48, -0.34] * 0.01
-    acc[:,4] += [-0.30, -0.45] * 0.01
-end
+# function modifier1!(network, acc)
+#     acc[:,1] += [-0.12, -0.05] * 0.01
+#     acc[:,2] += [0.07, 0.14] * 0.01
+#     acc[:,3] += [-0.41, 0.34] * 0.01
+#     acc[:,4] += [-0.09, -0.44] * 0.01
+# end
 
-function RandTrainer(network) # Random behaviours for benchmarking of a Network with size (11, 5)
-    col = network.columns
-    rows = network.row_counts[col]
+# function modifier2!(network, acc)
+#     acc[:,1] += [-0.32, 0.36] * 0.01
+#     acc[:,2] += [0.45, 0.01] * 0.01
+#     acc[:,3] += [-0.48, -0.34] * 0.01
+#     acc[:,4] += [-0.30, -0.45] * 0.01
+# end
 
-    behaviour1 = behaviour_unmoving(network)
-    behaviour1.goals[46] = [0.12, 0.43]
-    behaviour1.goals[47] = [-0.41, 0.38]
-    behaviour1.goals[48] = [0.19, -0.28]
-    behaviour1.goals[49] = [-0.47, -0.36]
-    behaviour1.modifier = modifier1!
+# function RandTrainer(network) # Random behaviours for benchmarking of a Network with size (11, 5)
+#     col = network.columns
+#     rows = network.row_counts[col]
 
-    behaviour2 = behaviour_unmoving(network)
-    behaviour2.goals[46] = [-0.38, 0.17]
-    behaviour2.goals[47] = [-0.21, -0.10]
-    behaviour2.goals[48] = [0.29, -0.34]
-    behaviour2.goals[49] = [-0.11, 0.27]
-    behaviour2.modifier = modifier2!
+#     behaviour1 = behaviour_unmoving(network)
+#     behaviour1.goals[46] = [0.12, 0.43]
+#     behaviour1.goals[47] = [-0.41, 0.38]
+#     behaviour1.goals[48] = [0.19, -0.28]
+#     behaviour1.goals[49] = [-0.47, -0.36]
+#     behaviour1.modifier = modifier1!
 
-    return Trainer([behaviour1, behaviour2])
-end
+#     behaviour2 = behaviour_unmoving(network)
+#     behaviour2.goals[46] = [-0.38, 0.17]
+#     behaviour2.goals[47] = [-0.21, -0.10]
+#     behaviour2.goals[48] = [0.29, -0.34]
+#     behaviour2.goals[49] = [-0.11, 0.27]
+#     behaviour2.modifier = modifier2!
+
+#     return Trainer([behaviour1, behaviour2], PPS())
+# end
 
 end

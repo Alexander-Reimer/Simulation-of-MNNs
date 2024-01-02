@@ -4,7 +4,11 @@ authors = ["Alexander Reimer <alexander.reimer2357@gmail.com>", "Matteo Friedric
 version = "1.0.0-DEV"
 
 [deps]
+AngleBetweenVectors = "ec570357-d46e-52ed-9726-18773498274d"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Evolutionary = "86b6b26d-c046-49b6-aa0b-5f0f74682bd6"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
