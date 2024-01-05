@@ -14,7 +14,7 @@ mutable struct PPS <: Optimization
 end
 
 PPS() = PPS(false, 1.15, 1.0, Set(), 250)
-
+PPS(net) = PPS()
 
 function select_spring(spring_data, selected::Set)
     # spring_data = get_spring_constants(network)

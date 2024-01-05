@@ -3,113 +3,128 @@ using MNN
 using DataFrames, CSV # for writing to csv
 using Dates # for timestamp
 using UUIDs # for uuid1
+using Random # for setting random seed
 
-function pps_num_behaviours()
-    df = DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[])
-    max_nums = 5
-    epochs = 150
-    Threads.@threads for i in 1:max_nums*4
-        net = MNN.Network(5, 5)
-        num = i % max_nums + 1
-        println("Number of behaviours: ", num)
-        t = Trainer(MNN.create_behaviours(net, num, π / (num + 1)), MNN.PPS())
-        train!(net, epochs, t)
-        push!(df, (now(), num, MNN.calc_loss(net, t.behaviours), epochs))
+function create_df()
+    return DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[], min_angle=Float64[], uuid=UInt128[], rows=Int64[], columns=Int64[])
+end
+
+macro init_comp()
+    ex = quote
+        df = create_df()
+        num_behaviours = 3
+        epochs = 50
+        min_angle = π / (num_behaviours + 1)
+        rows=5
+        columns=5
     end
-    open("src/data/PPSNumBehaviours_$(now()).csv", write=true, create=true) do io
+    return esc(ex)
+    # esc(Meta.parse(prog))
+end
+
+macro init_net()
+    ex = quote
+        id = uuid1()
+        Random.seed!(id.value)
+        net = MNN.Network(5, 5)
+    end
+    return esc(ex)
+end
+
+function save_df(name, df)
+    open("src/data/$(name)_$(now()).csv", write=true, create=true) do io
         CSV.write(io, df)
     end
 end
+macro save(name)
+    return esc(:(save_df($name, df)))
+end
 
-function pps_epochs()
-    df = DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[])
-    max_epochs = 150
+macro trainer(opt)
+    return esc(:(t = Trainer(MNN.create_behaviours(net, num_behaviours, min_angle), $opt(net)))) 
+end
+
+macro makeentry()
+    return esc(:(push!(df, (now(), num_behaviours, MNN.calc_loss(net, t.behaviours), epochs, min_angle, id.value, rows, columns))))
+end
+
+function typename(t)
+    return split(string(t), '.')[end]
+end
+
+function num_behaviours(opt_type)
+    @init_comp
+    max_num_behaviours = 5
+    @sync for num_behaviours in 1:max_num_behaviours
+        Threads.@spawn begin
+            @init_net()
+            @trainer(opt_type)
+            train!(net, epochs, t)
+            @makeentry
+        end
+    end
+    @save("$(typename(opt_type))NumBehaviours")
+end
+
+function epochs(opt_type)
+    @init_comp
+    max_epochs = epochs
     step = 10
-    num_b = 3
-    Threads.@threads for i in 1:8
-        net = MNN.Network(5, 5)
-        t = Trainer(MNN.create_behaviours(net, num_b, π / (num_b + 1)), MNN.PPS())
-        for e in 0:step:max_epochs
-            e > 0 && train!(net, step, t)
-            push!(df, (now(), num_b, MNN.calc_loss(net, t.behaviours), e))
-        end
-    end
-    open("src/data/PPSEpochs_$(now()).csv", write=true, create=true) do io
-        CSV.write(io, df)
-    end
-end
-
-function pps_diff()
-    df = DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[], min_angle=Float64[])
-    max_epochs = 150
-    num_b = 3
-    # Threads.@threads
-    tasks = []
-    for angle in 0:0.1:π/3
-        for _ in 1:5
-            t = Threads.@spawn begin
-                net = MNN.Network(5, 5)
-                t = Trainer(MNN.create_behaviours(net, num_b, angle), MNN.PPS())
-                train!(net, max_epochs, t)
-                push!(df, (now(), num_b, MNN.calc_loss(net, t.behaviours), max_epochs, angle))
+    # Threads.@threads 
+    @sync for _ in 1:2
+        Threads.@spawn begin
+            @init_net()
+            @trainer(opt_type)
+            for epochs in 0:step:max_epochs
+                epochs > 0 && train!(net, step, t)
+                @makeentry
             end
-            push!(tasks, t)
         end
     end
-    wait.(tasks)
-    open("src/data/PPSDiff_$(now()).csv", write=true, create=true) do io
-        CSV.write(io, df)
-    end
+    @save("$(typename(opt_type))Epochs")
 end
 
-function evolution_epochs()
-    df = DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[], uuid=UInt128[])
-    max_epochs = 50
-    step = 5
-    num_b = 3
-    Threads.@threads for i in 1:8
-        Random.seed!(id)
-        id = uuid1()
-        net = MNN.Network(5, 5)
-        t = Trainer(MNN.create_behaviours(net, num_b, π / (num_b + 1)), MNN.Evolution(net))
-        for e in 0:step:max_epochs
-            e > 0 && train!(net, step, t)
-            push!(df, (now(), num_b, MNN.calc_loss(net, t.behaviours), e, id))
+function min_angle(opt_type)
+    @init_comp
+    @sync for angle in 0:0.1:π/3
+        for _ in 1:5
+            Threads.@spawn begin
+                @init_net
+                @trainer(opt_type)
+                train!(net, epochs, t)
+                @makeentry
+            end
         end
     end
-    open("src/data/EvolutionEpochs_$(now()).csv", write=true, create=true) do io
-        CSV.write(io, df)
-    end
+    @save("$(typename(opt_type))MinAngle")
 end
 
-function evolution_num_behaviours()
-    df = DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[], uuid=UInt128[])
-    max_nums = 5
-    epochs = 50
-    Threads.@threads for i in 1:max_nums*3
-        net = MNN.Network(5, 5)
-        id = uuid1()
-        num = i % max_nums + 1
-        println("Number of behaviours: ", num)
-        t = Trainer(MNN.create_behaviours(net, num, π / (num + 1)), MNN.Evolution(net))
-        train!(net, epochs, t)
-        push!(df, (now(), num, MNN.calc_loss(net, t.behaviours), epochs, id.value))
-    end
-    open("src/data/EvolutionNumBehaviours_$(now()).csv", write=true, create=true) do io
-        CSV.write(io, df)
+function num_columns(opt_type)
+    @init_comp
+    @sync for columns in 1:10
+        for _ in 1:2
+            Threads.@spawn begin
+                @init_net
+                @trainer(opt_type)
+                train!(net, epochs, t)
+                @makeentry
+            end
+        end
     end
 end
 
 function compare_pps()
-    pps_num_behaviours()
-    pps_epochs()
-    pps_diff()
+    num_behaviours(MNN.PPS)
+    epochs(MNN.PPS)
+    min_angle(MNN.PPS)
+    num_columns(MNN.PPS)
 end
 
 function compare_evolution()
-    evolution_num_behaviours()
-    evolution_epochs()
-
+    num_behaviours(MNN.Evolution)
+    epochs(MNN.Evolution)
+    min_angle(MNN.Evolution)
+    num_columns(MNN.Evolution)
 end
 
 # pps_num_behaviours()
