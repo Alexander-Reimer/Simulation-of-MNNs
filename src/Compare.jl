@@ -13,7 +13,7 @@ macro init_comp()
     ex = quote
         df = create_df()
         num_behaviours = 3
-        epochs = 50
+        epochs = 100
         min_angle = π / (num_behaviours + 1)
         rows=5
         columns=5
@@ -26,7 +26,7 @@ macro init_net()
     ex = quote
         id = uuid1()
         Random.seed!(id.value)
-        net = MNN.Network(5, 5)
+        net = MNN.Network(columns, rows)
     end
     return esc(ex)
 end
@@ -101,8 +101,8 @@ end
 
 function num_columns(opt_type)
     @init_comp
-    @sync for columns in 1:6
-        for _ in 1:4
+    @sync for columns in 1:5
+        for _ in 1:5
             Threads.@spawn begin
                 @init_net
                 @trainer(opt_type)
@@ -112,6 +112,21 @@ function num_columns(opt_type)
         end
     end
     @save("$(typename(opt_type))NumColumns")
+end
+
+function num_rows(opt_type)
+    @init_comp
+    @sync for rows in 1:5
+        for _ in 1:5
+            Threads.@spawn begin
+                @init_net
+                @trainer(opt_type)
+                train!(net, epochs, t)
+                @makeentry
+            end
+        end
+    end
+    @save("$(typename(opt_type))NumRows")
 end
 
 function compare_pps()
@@ -128,5 +143,4 @@ function compare_evolution()
     num_columns(MNN.Evolution)
 end
 
-# pps_num_behaviours()
 end
