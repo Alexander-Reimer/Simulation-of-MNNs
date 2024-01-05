@@ -2,6 +2,7 @@ module Compare
 using MNN
 using DataFrames, CSV # for writing to csv
 using Dates # for timestamp
+using UUIDs # for uuid1
 
 function pps_num_behaviours()
     df = DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[])
@@ -61,8 +62,42 @@ function pps_diff()
     end
 end
 
-function ()
-    
+function evolution_epochs()
+    df = DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[], uuid=UInt128[])
+    max_epochs = 50
+    step = 5
+    num_b = 3
+    Threads.@threads for i in 1:8
+        Random.seed!(id)
+        id = uuid1()
+        net = MNN.Network(5, 5)
+        t = Trainer(MNN.create_behaviours(net, num_b, π / (num_b + 1)), MNN.Evolution(net))
+        for e in 0:step:max_epochs
+            e > 0 && train!(net, step, t)
+            push!(df, (now(), num_b, MNN.calc_loss(net, t.behaviours), e, id))
+        end
+    end
+    open("src/data/EvolutionEpochs_$(now()).csv", write=true, create=true) do io
+        CSV.write(io, df)
+    end
+end
+
+function evolution_num_behaviours()
+    df = DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[], uuid=UInt128[])
+    max_nums = 5
+    epochs = 50
+    Threads.@threads for i in 1:max_nums*3
+        net = MNN.Network(5, 5)
+        id = uuid1()
+        num = i % max_nums + 1
+        println("Number of behaviours: ", num)
+        t = Trainer(MNN.create_behaviours(net, num, π / (num + 1)), MNN.Evolution(net))
+        train!(net, epochs, t)
+        push!(df, (now(), num, MNN.calc_loss(net, t.behaviours), epochs, id.value))
+    end
+    open("src/data/EvolutionNumBehaviours_$(now()).csv", write=true, create=true) do io
+        CSV.write(io, df)
+    end
 end
 
 function compare_pps()
@@ -72,7 +107,9 @@ function compare_pps()
 end
 
 function compare_evolution()
-    
+    evolution_num_behaviours()
+    evolution_epochs()
+
 end
 
 # pps_num_behaviours()
