@@ -71,7 +71,7 @@ function epochs(opt_type)
     max_epochs = epochs
     step = 10
     # Threads.@threads 
-    @sync for _ in 1:2
+    @sync for _ in 1:5
         Threads.@spawn begin
             @init_net()
             @trainer(opt_type)
@@ -101,8 +101,8 @@ end
 
 function num_columns(opt_type)
     @init_comp
-    @sync for columns in 1:10
-        for _ in 1:2
+    @sync for columns in 1:6
+        for _ in 1:4
             Threads.@spawn begin
                 @init_net
                 @trainer(opt_type)
@@ -111,6 +111,7 @@ function num_columns(opt_type)
             end
         end
     end
+    @save("$(typename(opt_type))NumColumns")
 end
 
 function compare_pps()
