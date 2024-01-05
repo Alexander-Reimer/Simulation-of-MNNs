@@ -801,8 +801,10 @@ function create_behaviours(network::Network, num::Int, min_angle=π/3)
     modifiers = Array{Float64,2}(undef, 2, num)
     for i in eachindex(behaviours)
         b_goals = Dict()
-        for row in 2:rows-1
+        for row in 1:rows
             neuron_i = get_neuron_index(network, col, row)
+            neuron = get_neuron(network, neuron_i)
+            !neuron.movable && continue
             if rand() < 0.5
                 goals[:, i, row] .= [0.0, 0.0]
                 b_goals[neuron_i] = goals[:, i, row]
