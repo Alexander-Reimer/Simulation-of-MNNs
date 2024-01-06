@@ -49,6 +49,8 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, op
     # set_spring_data!(network, spring_data)
 
     base_loss = MNN.calc_loss(network, spring_data, behaviours)
+    isnan(base_loss) && (@warn "Abandoning training because loss is NaN!"; return)
+
     # selected = Set()
     new_spring_data = deepcopy(spring_data)
     @info "Base loss: $base_loss"
@@ -63,6 +65,7 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, op
         spring = opt.increment + spring
         new_spring_data[i] = spring
         loss = MNN.calc_loss(network, new_spring_data, behaviours)
+        isnan(loss) && (@warn "Abandoning training because loss is NaN!"; break)
         if loss < base_loss
             # new_spring_data = deepcopy(spring_data)
             # while true
