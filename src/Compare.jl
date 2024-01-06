@@ -6,17 +6,23 @@ using UUIDs # for uuid1
 using Random # for setting random seed
 
 function create_df()
-    return DataFrame(time=DateTime[], behaviours=Int64[], loss=Float64[], epochs=Int64[], min_angle=Float64[], uuid=UInt128[], rows=Int64[], columns=Int64[])
+    return DataFrame(time=DateTime[], uuid=UInt128[], epochs=Int64[], rows=Int64[], columns=Int64[], behaviours=Int64[], min_angle=Float64[], mag_goals=Float64[], mag_modifier=Float64[], loss=Float64[])
 end
 
 macro init_comp()
     ex = quote
-        df = create_df()
+        global kdf = create_df()
+        filepath = "src/data/" * name * "_" * string(now()) * ".csv"
+        open(filepath, write=true, create=true) do io
+            CSV.write(io, df)
+        end
         num_behaviours = 3
         epochs = 100
         min_angle = π / (num_behaviours + 1)
-        rows=5
-        columns=5
+        rows = 5
+        columns = 5
+        mag_goals = 1
+        mag_modifier = 0.001
     end
     return esc(ex)
     # esc(Meta.parse(prog))
@@ -31,21 +37,41 @@ macro init_net()
     return esc(ex)
 end
 
-function save_df(name, df)
-    open("src/data/$(name)_$(now()).csv", write=true, create=true) do io
+function save_df(filepath, df)
+    open(filepath, write=true) do io
         CSV.write(io, df)
+        # flush(io)
     end
+    # empty!(df)
 end
-macro save(name)
-    return esc(:(save_df($name, df)))
+
+macro save(x)
+    # return esc(:(save_df($filepath, df)))
 end
 
 macro trainer(opt)
-    return esc(:(t = Trainer(MNN.create_behaviours(net, num_behaviours, min_angle), $opt(net)))) 
+    return esc(:(t = Trainer(MNN.create_behaviours(net, num_behaviours; min_angle=min_angle, m_goal=mag_goals, m_mod=mag_modifier), $opt(net))))
 end
 
 macro makeentry()
-    return esc(:(push!(df, (now(), num_behaviours, MNN.calc_loss(net, t.behaviours), epochs, min_angle, id.value, rows, columns))))
+    ex = quote
+        push!(df, (now(), id.value, epochs, rows, columns, num_behaviours, min_angle, mag_goals, mag_modifier, MNN.calc_loss(net, t.behaviours)))
+        save_df(filepath, df)
+    end
+    return esc(ex)
+end
+
+macro train!()
+    estep = 5
+    ex = quote
+        max_epochs = epochs
+        for epochs in 0:$estep:max_epochs
+            epochs > 0 && train!(net, $estep, t)
+            @makeentry
+        end
+        # epochs = max_epochs
+    end
+    return esc(ex)
 end
 
 function typename(t)
@@ -59,7 +85,8 @@ function num_behaviours(opt_type)
         Threads.@spawn begin
             @init_net()
             @trainer(opt_type)
-            train!(net, epochs, t)
+            # train!(net, epochs, t)
+            @train!
             @makeentry
         end
     end
@@ -100,23 +127,25 @@ function min_angle(opt_type)
 end
 
 function num_columns(opt_type)
+    name = "$(typename(opt_type))NumColumns"
     @init_comp
-    @sync for columns in 1:5
-        for _ in 1:5
-            Threads.@spawn begin
-                @init_net
-                @trainer(opt_type)
-                train!(net, epochs, t)
-                @makeentry
-            end
+    # 2 columns is min; gets stuck in infinite loop otherwise
+    @sync for columns in 2:3, _ in 1:1
+        Threads.@spawn begin
+            epochs = $epochs
+            @init_net
+            @trainer(opt_type)
+            @train!
+            # train!(net, epochs, t)
+            # @makeentry
         end
     end
-    @save("$(typename(opt_type))NumColumns")
+    # @save("$(typename(opt_type))NumColumns")
 end
 
 function num_rows(opt_type)
     @init_comp
-    @sync for rows in 1:5
+    @sync for rows in 1:8
         for _ in 1:5
             Threads.@spawn begin
                 @init_net
@@ -127,6 +156,19 @@ function num_rows(opt_type)
         end
     end
     @save("$(typename(opt_type))NumRows")
+end
+
+function num_rows_columns(opt_type)
+    name = "$(typename(opt_type))NumRowsColumns"
+    @init_comp
+    @sync for rows in 3:10, columns in 2:10, _ in 1:4
+        Threads.@spawn begin
+            epochs = $epochs
+            @init_net
+            @trainer(opt_type)
+            @train!
+        end
+    end
 end
 
 function compare_pps()
@@ -141,6 +183,10 @@ function compare_evolution()
     epochs(MNN.Evolution)
     min_angle(MNN.Evolution)
     num_columns(MNN.Evolution)
+end
+
+function load(path)
+    return CSV.read(path, DataFrame, types=Dict(:uuid => UInt128))
 end
 
 end
