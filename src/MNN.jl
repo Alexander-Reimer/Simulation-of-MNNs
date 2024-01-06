@@ -793,7 +793,7 @@ function random_distanced_vector(others, m, min_angle)
     return result
 end
 
-function create_behaviours(network::Network, num::Int, min_angle=π/3)
+function create_behaviours(network::Network, num::Int; min_angle=π/3, m_goal=1, m_mod=0.1)
     behaviours = Vector{Behaviour}(undef, num)
     col = network.columns
     rows = network.row_counts[col]
@@ -810,12 +810,12 @@ function create_behaviours(network::Network, num::Int, min_angle=π/3)
                 b_goals[neuron_i] = goals[:, i, row]
             else
                 others = goals[:, 1:i-1, row]
-                goals[:, i, row] .= random_distanced_vector(others, 1, min_angle)
+                goals[:, i, row] .= random_distanced_vector(others, m_goal, min_angle)
                 b_goals[neuron_i] = goals[:, i, row]
             end
         end
         others = modifiers[:, 1:i-1]
-        modifier = random_distanced_vector(others, 0.1, min_angle)
+        modifier = random_distanced_vector(others, m_mod, min_angle)
         modifiers[:, i] .= modifier
         # behaviours[i] = behaviour_unmoving(network)
         behaviours[i] = Behaviour(b_goals, true, (network, acc) -> addvelocity!(network, acc, modifier))
