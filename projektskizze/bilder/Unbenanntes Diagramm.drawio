@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-01-13T20:35:22.503Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0" etag="PmQIC9kFbMuyusUXE-8I" version="22.1.16" type="github" pages="2">
+<mxfile host="app.diagrams.net" modified="2024-01-13T20:37:30.726Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0" etag="GnzSBqU78w-piFAapsEL" version="22.1.16" type="github" pages="2">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
     <mxGraphModel dx="1683" dy="976" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -114,59 +114,56 @@
     </mxGraphModel>
   </diagram>
   <diagram id="u7Vs4OPhuoCw_HsEVjFQ" name="Page-2">
-    <mxGraphModel dx="243" dy="1446" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="728" dy="1999" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-1" value="Network" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=1;" vertex="1" parent="1">
-          <mxGeometry x="500" y="-10" width="550" height="390" as="geometry">
+          <mxGeometry x="500" y="-10" width="590" height="390" as="geometry">
             <mxRectangle x="130" y="380" width="160" height="26" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-2" value="graph : MetaGraph // Neuronen und Federn; jedes Neuron unter einem Index gespeichert" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="26" width="550" height="26" as="geometry" />
+          <mxGeometry y="26" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-3" value="rows : Int // max. Anzahl an Reihen (jede zweite Spalte hat max-1)" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="52" width="550" height="26" as="geometry" />
+          <mxGeometry y="52" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-4" value="columns : Int // Anzahl an Spalten" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="78" width="550" height="22" as="geometry" />
+          <mxGeometry y="78" width="590" height="22" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-5" value="row_counts : Int-Vektor // Anzahl an Reihen für jede Spalte" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="100" width="550" height="22" as="geometry" />
+          <mxGeometry y="100" width="590" height="22" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-6" value="col_fixed : Bool-Vektor // Für jede Spalte, ob sie oben &amp; unten fixiert ist" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="122" width="550" height="26" as="geometry" />
+          <mxGeometry y="122" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-7" value="neuron_count : Int // Anzahl Neuronen im Netzwerk" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="148" width="550" height="26" as="geometry" />
+          <mxGeometry y="148" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-8" value="xdist : Float // horiz. Distanz zwischen Spalten" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="174" width="550" height="26" as="geometry" />
+          <mxGeometry y="174" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-9" value="ydist : Float // vert. Distanz zwischen Neuronen einer Spalte" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="200" width="550" height="26" as="geometry" />
+          <mxGeometry y="200" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-10" value="start_positions : Dict von Int zu Float-Vektor // Zuordnung der Startposition zu jedem Neuron" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="226" width="550" height="26" as="geometry" />
+          <mxGeometry y="226" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-11" value="positions : 2D-Float-Array // entlang 1. Achse: Koordinaten, entlang 2. Achse: Neuronen" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="252" width="550" height="26" as="geometry" />
+          <mxGeometry y="252" width="590" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="QxHwtwm4iRaFP-0U_lzp-12" value="velocities : 2D-Float-Array // entlang 1. Achse: Geschwindigkeitskomponenten, 2. Achse: Neuronen" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="278" width="550" height="26" as="geometry" />
+        <mxCell id="QxHwtwm4iRaFP-0U_lzp-12" value="velocities : 2D-Float-Array // 1. Achse: Geschwindigkeitskomponenten, 2. Achse: Neuronen" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
+          <mxGeometry y="278" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="QxHwtwm4iRaFP-0U_lzp-13" value="" style="line;html=1;strokeWidth=1;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="304" width="550" height="8" as="geometry" />
+          <mxGeometry y="304" width="590" height="8" as="geometry" />
         </mxCell>
-        <mxCell id="QxHwtwm4iRaFP-0U_lzp-14" value="Network(graph : MetaGraph, rows : Ganzzahl, columns : Ganzzahl, xdist : Dezimalzahl = 1) : Network" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="312" width="550" height="26" as="geometry" />
+        <mxCell id="QxHwtwm4iRaFP-0U_lzp-14" value="Network(graph : MetaGraph, rows : Int, columns : Int, xdist : Int = 1) : Network // erstelle Netzwerk" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
+          <mxGeometry y="312" width="590" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="QxHwtwm4iRaFP-0U_lzp-15" value="print_graph(network : Network)" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="338" width="550" height="26" as="geometry" />
-        </mxCell>
-        <mxCell id="QxHwtwm4iRaFP-0U_lzp-16" value="get_neuron(network : Network, index : Ganzzahl, label : Wahrheitswert = wahr) : Neuron" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
-          <mxGeometry y="364" width="550" height="26" as="geometry" />
+        <mxCell id="QxHwtwm4iRaFP-0U_lzp-16" value="get_neuron(network : Network, index : Int) : Neuron // Gib Neuron aus graph mit ggb. index zurück" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="QxHwtwm4iRaFP-0U_lzp-1">
+          <mxGeometry y="338" width="590" height="26" as="geometry" />
         </mxCell>
         <mxCell id="S1XcV5WxQMrId0YKymg7-1" value="Neuron" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=1;" vertex="1" parent="1">
           <mxGeometry x="70" y="-140" width="326" height="80" as="geometry">
