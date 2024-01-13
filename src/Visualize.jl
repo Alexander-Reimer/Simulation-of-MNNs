@@ -26,10 +26,7 @@ function update_positions!(vis::Visualizer, network::Network)
     end
 end
 
-function Visualizer(network::Network;
-    max_fps::Number=10,
-    behaviour::Union{Nothing,Behaviour}=nothing)
-
+function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
     @info "test"
     neuron_xs = Observable(Vector{Float64}(undef, network.neuron_count), ignore_equal_values=true)
     neuron_ys = Observable(Vector{Float64}(undef, network.neuron_count), ignore_equal_values=true)
@@ -69,8 +66,4 @@ function Visualizer(network::Network;
     end
     display(fig)
     return vis
-end
-
-function Visualizer(network::Network, trainer::Trainer; max_fps::Number=10)
-    Visualizer(network; max_fps=max_fps, behaviours=trainer.behaviours)
 end

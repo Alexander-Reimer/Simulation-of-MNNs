@@ -12,6 +12,7 @@ using MetaGraphsNext
 using Observables
 # using Revise
 using StaticArrays
+using Random
 
 struct Neuron
     movable::Bool
@@ -42,11 +43,8 @@ include("Visualize.jl")
 mutable struct Behaviour
     goals::Dict{Int,Vector{Number}}
     relative::Bool
-    modifier::Function
+    modifiers::Dict{Int,Vector{Number}}
 end
-
-NoModifier() = (network, delta) -> nothing
-NoBehaviour() = Behaviour(Dict(), false, NoModifier())
 
 abstract type Optimization end
 abstract type Simulation end
@@ -242,9 +240,14 @@ function get_spring(network, n1, n2; label::Bool=true)
     return network.graph.edge_data[tn1, tn2]
 end
 
-function addvelocity!(network::Network, acc::Matrix, v::Vector)
+function addvelocity!(network::Network, acc::Matrix, modifiers)
+    #TODO: what about unmovables?
     for row in 1:network.row_counts[1]
-        acc[:, row] += v
+        neuron_i = get_neuron_index(network, 1, row)
+        if haskey(modifiers, neuron_i)
+            #TODO: check indexing
+            acc[:, row] += modifiers[neuron_i]
+        end
     end
 end
 
@@ -360,7 +363,7 @@ function behaviour_unmoving(network::Network)
         neuron_i = get_neuron_index(network, col, row)
         goals[neuron_i] = [0.0, 0.0]
     end
-    return Behaviour(goals, true, NoModifier())
+    return Behaviour(goals, true, Dict())
 end
 
 function random_distanced_vector(others, m, min_angle)
@@ -382,14 +385,13 @@ end
 
 function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=1, m_mod=0.1)
     behaviours = Vector{Behaviour}(undef, num)
-    col = network.columns
-    rows = network.row_counts[col]
-    goals = Array{Float64,3}(undef, 2, num, rows)
-    modifiers = Array{Float64,2}(undef, 2, num)
+    goals = Array{Float64,3}(undef, 2, num, network.row_counts[end])
+    modifiers = Array{Float64,3}(undef, 2, num, network.row_counts[1])
     for i in eachindex(behaviours)
         b_goals = Dict()
-        for row in 1:rows
-            neuron_i = get_neuron_index(network, col, row)
+        b_modifiers = Dict()
+        for row in 1:network.row_counts[end]
+            neuron_i = get_neuron_index(network, network.columns, row)
             neuron = get_neuron(network, neuron_i)
             !neuron.movable && continue
             if rand() < 0.5
@@ -401,11 +403,18 @@ function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=
                 b_goals[neuron_i] = goals[:, i, row]
             end
         end
-        others = modifiers[:, 1:i-1]
-        modifier = random_distanced_vector(others, m_mod, min_angle)
-        modifiers[:, i] .= modifier
+        for row in shuffle(1:network.row_counts[1])
+            neuron_i = get_neuron_index(network, 1, row)
+            neuron = get_neuron(network, neuron_i)
+            !neuron.movable && continue
+            if length(b_modifiers) == 0 || rand() > 0.5
+                others = modifiers[:, 1:i-1, row]
+                modifiers[:, i, row] .= random_distanced_vector(others, m_mod, min_angle)
+                b_modifiers[neuron_i] = modifiers[:, i, row]
+            end
+        end
         # behaviours[i] = behaviour_unmoving(network)
-        behaviours[i] = Behaviour(b_goals, true, (network, acc) -> addvelocity!(network, acc, modifier))
+        behaviours[i] = Behaviour(b_goals, true, b_modifiers)
     end
     return behaviours
 end
@@ -421,7 +430,7 @@ include("Evolution.jl")
 include("Backpropagation.jl")
 
 function simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
-    sim.modifier = behaviour.modifier
+    sim.modifier = (network, acc) -> addvelocity!(network, acc, behaviour.modifiers)
     simulate!(network, sim, vis=vis)
 end
 
