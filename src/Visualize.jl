@@ -1,4 +1,3 @@
-
 mutable struct Visualizer
     neuron_xs::Observables.Observable{Vector{Float64}}
     neuron_ys::Observables.Observable{Vector{Float64}}
@@ -6,65 +5,6 @@ mutable struct Visualizer
     observers::Dict{Any,Observables.Observable}
     fig
     ax
-end
-
-function draw(network::Network)
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-
-    # edges first so they dont cover neurons
-    # edges
-    global edge_draw_obs = []
-    i = 1
-    for (n1, n2) in keys(network.graph.edge_data)
-        xs = Observable(
-            [get_neuron(network, n1).pos[1], get_neuron(network, n2).pos[1]],
-        # ignore_equal_values=true
-        )
-        push!(edge_draw_obs, xs)
-        ys = Observable(
-            [get_neuron(network, n1).pos[2], get_neuron(network, n2).pos[2]],
-        # ignore_equal_values=true
-        )
-        push!(edge_draw_obs, ys)
-        lines!(edge_draw_obs[i], edge_draw_obs[i+1], color=:red, stroke=10)
-        i += 2
-    end
-
-    # neurons
-    xs = [get_neuron(network, i).pos[1] for i in 1:sum(network.row_counts)]
-    ys = [get_neuron(network, i).pos[2] for i in 1:sum(network.row_counts)]
-    scatter!(xs, ys, marker=:circle, markersize=25, color=:blue)
-end
-
-
-function draw!(r)
-    fig = GLMakie.Figure()
-    ax = Axis(fig[1, 1])
-    global ox = Observable(zeros(Float64, Int(size(r)[1] / 2)))
-    global oy = Observable(zeros(Float64, Int(size(r)[1] / 2)))
-    GLMakie.scatter!(ox, oy, marker=:circle, markersize=25, color=:blue)
-    display(fig)
-    sleep(1)
-    @info "Started!"
-
-    x = zeros(Float64, Int(size(r)[1] / 2))
-    y = zeros(Float64, Int(size(r)[1] / 2))
-    for i = 1:(size(r)[2])
-        for j = 1:size(r)[1]
-            if j % 2 == 0
-                y[Int(j / 2)] = r[j, i]
-            else
-                x[Int(j / 2 + 0.5)] = r[j, i]
-            end
-
-        end
-        ox[] = x
-        oy[] = y
-
-        sleep(0.08)
-    end
-
 end
 
 function update_positions!(vis::Visualizer, network::Network)
@@ -86,7 +26,10 @@ function update_positions!(vis::Visualizer, network::Network)
     end
 end
 
-function Visualizer(network::Network; max_fps::Number=10)
+function Visualizer(network::Network;
+    max_fps::Number=10,
+    behaviour::Union{Nothing,Behaviour}=nothing)
+
     @info "test"
     neuron_xs = Observable(Vector{Float64}(undef, network.neuron_count), ignore_equal_values=true)
     neuron_ys = Observable(Vector{Float64}(undef, network.neuron_count), ignore_equal_values=true)
@@ -100,22 +43,34 @@ function Visualizer(network::Network; max_fps::Number=10)
     vis = Visualizer(neuron_xs, neuron_ys, edge_pairs, observers, fig, ax)
 
     update_positions!(vis, network)
-    scatter!(neuron_xs, neuron_ys, marker=:circle, markersize=25, color=:blue)
 
     for (n1, n2) in edge_pairs
         vis.observers[n1, n2, :xs] = Observable([neuron_xs.val[n1], neuron_xs.val[n2]])
         throttle(1 / max_fps, vis.observers[n1, n2, :xs])
         vis.observers[n1, n2, :ys] = Observable([neuron_ys.val[n1], neuron_ys.val[n2]])
         throttle(1 / max_fps, vis.observers[n1, n2, :ys])
-        l = lines!(vis.observers[n1, n2, :xs], vis.observers[n1, n2, :ys], color=:red, stroke=10)
+        l = lines!(vis.observers[n1, n2, :xs], vis.observers[n1, n2, :ys], color=:grey, stroke=10)
     end
 
+    scatter!(neuron_xs, neuron_ys, marker=:circle, markersize=25, color=:blue)
+
+    if behaviour !== nothing
+        for (n, coords) in behaviour.goals
+            start_x, start_y = network.start_positions[n]
+            scatter!(start_x + coords[1], start_y + coords[2], marker=:circle, markersize=25, color=:red)
+            dist = sqrt((neuron_xs.val[n] - (start_x + coords[1]))^2 + (neuron_ys.val[n] - (start_y + coords[2]))^2)
+            if dist > 0.1
+                arrow_head_x, arrow_head_y = coords
+                arrow_head_x -= arrow_head_x > 0 ? 0.01 : -0.01
+                arrow_head_y -= arrow_head_y > 0 ? 0.01 : -0.01
+                arrows!([start_x], [start_y], [arrow_head_x], [arrow_head_y], color=:green, linewidth=1, arrowsize=10, align = :origin)
+            end
+        end
+    end
     display(fig)
     return vis
 end
 
-function show(net::Network, modifier::Function=NoModifier())
-    reset!(net)
-    r = simulate!(net, (0.0, 100.0), modifier=modifier)
-    draw!(r)
+function Visualizer(network::Network, trainer::Trainer; max_fps::Number=10)
+    Visualizer(network; max_fps=max_fps, behaviours=trainer.behaviours)
 end
