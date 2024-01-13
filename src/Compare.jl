@@ -6,7 +6,7 @@ using UUIDs # for uuid1
 using Random # for setting random seed
 
 function create_df()
-    return DataFrame(time=DateTime[], uuid=UInt128[], epochs=Int64[], rows=Int64[], columns=Int64[], behaviours=Int64[], min_angle=Float64[], mag_goals=Float64[], mag_modifier=Float64[], loss=Float64[])
+    return DataFrame(time=DateTime[], uuid=UInt128[], epochs=Int64[], rows=Int64[], columns=Int64[], behaviours=Int64[], min_angle=Float64[], mag_goals=Float64[], mag_modifier=Float64[], sim_type=String[], sim_time=Float64[], loss=Float64[])
 end
 
 macro init_comp()
@@ -18,6 +18,7 @@ macro init_comp()
         end
         num_behaviours = 3
         epochs = 50
+        sim_time = 100
         rows = 5
         columns = 5
         mag_goals = 1
@@ -50,12 +51,32 @@ macro save(x)
 end
 
 macro trainer(opt)
-    return esc(:(t = Trainer(MNN.create_behaviours(net, num_behaviours; min_angle=min_angle, m_goal=mag_goals, m_mod=mag_modifier), $opt(net))))
+    ex = quote
+        t = Trainer(
+            MNN.create_behaviours(net, num_behaviours; min_angle=min_angle, m_goal=mag_goals, m_mod=mag_modifier),
+            MNN.Diff(sim_time),
+            $opt(net)
+        )
+    end
+    return esc(ex)
 end
 
 macro makeentry()
     ex = quote
-        push!(df, (now(), id.value, epochs, rows, columns, num_behaviours, min_angle, mag_goals, mag_modifier, MNN.calc_loss(net, t.behaviours)))
+        push!(df, (
+            now(),
+            id.value,
+            epochs,
+            rows,
+            columns,
+            num_behaviours,
+            min_angle,
+            mag_goals,
+            mag_modifier,
+            typename(t.simulation),
+            t.simulation.time,
+            MNN.calc_loss(net, t.simulation, t.behaviours)
+        ))
         save_df(filepath, df)
     end
     return esc(ex)
@@ -74,9 +95,8 @@ macro train!()
     return esc(ex)
 end
 
-function typename(t)
-    return split(string(t), '.')[end]
-end
+typename(t::DataType) = split(string(t), '.')[end]
+typename(t) = typename(typeof(t))
 
 function num_behaviours(opt_type)
     name = "$(typename(opt_type))NumBehaviours"
