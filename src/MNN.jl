@@ -6,6 +6,8 @@ export Network, simulate!, Trainer, train!, Visualizer, netpush!, netpull!, draw
 using AngleBetweenVectors
 using DifferentialEquations
 using GLMakie
+using CairoMakie
+CairoMakie.activate!(type = "svg")
 using Graphs
 using LinearAlgebra
 using MetaGraphsNext
