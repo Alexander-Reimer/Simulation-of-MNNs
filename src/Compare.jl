@@ -11,18 +11,17 @@ end
 
 macro init_comp()
     ex = quote
-        global kdf = create_df()
+        global df = create_df()
         filepath = "src/data/" * name * "_" * string(now()) * ".csv"
         open(filepath, write=true, create=true) do io
             CSV.write(io, df)
         end
         num_behaviours = 3
-        epochs = 100
-        min_angle = π / (num_behaviours + 1)
+        epochs = 50
         rows = 5
         columns = 5
         mag_goals = 1
-        mag_modifier = 0.001
+        mag_modifier = 0.1
     end
     return esc(ex)
     # esc(Meta.parse(prog))
@@ -32,6 +31,7 @@ macro init_net()
     ex = quote
         id = uuid1()
         Random.seed!(id.value)
+        min_angle = π / (num_behaviours + 1)
         net = MNN.Network(columns, rows)
     end
     return esc(ex)
@@ -79,15 +79,14 @@ function typename(t)
 end
 
 function num_behaviours(opt_type)
+    name = "$(typename(opt_type))NumBehaviours"
     @init_comp
-    max_num_behaviours = 5
-    @sync for num_behaviours in 1:max_num_behaviours
+    max_num_behaviours = 10
+    @sync for num_behaviours in 1:max_num_behaviours, _ in 1:50
         Threads.@spawn begin
             @init_net()
             @trainer(opt_type)
-            # train!(net, epochs, t)
             @train!
-            @makeentry
         end
     end
     @save("$(typename(opt_type))NumBehaviours")
