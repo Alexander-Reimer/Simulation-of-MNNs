@@ -101,16 +101,20 @@ function single_point_crossover(can1, can2)
     return (out1, out2)
 end
 
-function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, opt::Evolution)
+function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, sim::Simulation, opt::Evolution)
+    loss = calc_loss(network, sim, behaviours)
     spring_data = get_spring_constants_vec(network)
-    loss = calc_loss(network, spring_data, behaviours)
-    # candidates = [mutation(spring_data, opt.mutation_strength) for _ in 1:pop_size]
 
-    for i = 1:epochs
-        for i2 in eachindex(opt.candidates)
-            opt.candidates[i2] = mutation(opt.candidates[i2], opt.mutation_strength)
+    for _ = 1:epochs
+        # TODO: check if pop size ever changes; if no, no need to allocate new
+        # vector every time
+        losses = Vector{Float64}(undef, length(opt.candidates))
+        for i in eachindex(opt.candidates)
+            opt.candidates[i] = mutation(opt.candidates[i], opt.mutation_strength)
+            set_spring_data!(network, opt.candidates[i])
+            losses[i] = calc_loss(network, sim, behaviours)
         end
-        losses = [calc_loss(network, candidate, behaviours) for candidate in opt.candidates]
+
         index = sortperm(losses)
         if losses[index[1]] < loss
             spring_data = opt.candidates[index[1]]
@@ -128,20 +132,21 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, op
     set_spring_data!(network, spring_data)
 end
 
-function train2!(pop_size, network, trainer)
-    spring_data = get_spring_constants_vec(network)
-    loss = calc_loss(spring_data, network, trainer)
+#TODO
+# function train2!(pop_size, network, trainer)
+#     spring_data = get_spring_constants_vec(network)
+#     loss = calc_loss(spring_data, network, trainer)
 
 
-    for i = 1:1
-        candidates = [mutation(spring_data, 0.0001) for i = 1:pop_size]
-        losses = [calc_loss(candidate, network, trainer) for candidate in candidates]
-        index = sortperm(losses)
-        if losses[index[1]] < loss
-            spring_data = candidates[index[1]]
-            loss = losses[index[1]]
-        end
-        println(loss)
-    end
-    set_spring_data!(n, spring_data)
-end
+#     for i = 1:1
+#         candidates = [mutation(spring_data, 0.0001) for i = 1:pop_size]
+#         losses = [calc_loss(candidate, network, trainer) for candidate in candidates]
+#         index = sortperm(losses)
+#         if losses[index[1]] < loss
+#             spring_data = candidates[index[1]]
+#             loss = losses[index[1]]
+#         end
+#         println(loss)
+#     end
+#     set_spring_data!(n, spring_data)
+# end
