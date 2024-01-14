@@ -1,8 +1,3 @@
-# module PPSOptimizer
-# using MNN
-
-# export PPS, train!
-
 mutable struct PPS <: Optimization
     initialized::Bool
     init::Float64
@@ -39,15 +34,17 @@ function pps_init!(network::Network, opt::PPS)
     end
 end
 
-function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, sim::Simulation, opt::PPS)
+function train!(
+    network::Network, epochs::Int, behaviours::Vector{Behaviour}, sim::Simulation, opt::PPS
+)
     if !opt.initialized
         pps_init!(network, opt)
         opt.initialized = true
     end
-    
+
     base_loss = calc_loss(network, sim, behaviours)
-    isnan(base_loss) && (@warn "Abandoning training because loss is NaN!"; return)
-    
+    isnan(base_loss) && (@warn "Abandoning training because loss is NaN!"; return nothing)
+
     spring_data = deepcopy(get_spring_constants_vec(network))
     new_spring_data = deepcopy(spring_data)
     @info "Base loss: $base_loss"
@@ -65,14 +62,14 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, si
         set_spring_data!(network, new_spring_data)
         loss = calc_loss(network, sim, behaviours)
         isnan(loss) && (@warn "Abandoning training because loss is NaN!"; break)
-        
+
         if loss < base_loss
             # new_spring_data = deepcopy(spring_data)
             # while true
             #     increment *= 0.9
             #     spring = increment + spring
             #     loss = calc_loss(network, spring_data, trainer.behaviours)
-                
+
             # end
             spring_data = deepcopy(new_spring_data)
             base_loss = loss
@@ -80,10 +77,10 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, si
             new_spring_data = deepcopy(spring_data)
         end
         epochs -= 1
-        epochs % 20 == 0 && @info "Epochs left: $epochs, base loss: $base_loss, loss: $loss, increment: $(opt.increment)"
+        epochs % 20 == 0 &&
+            @info "Epochs left: $epochs, base loss: $base_loss, loss: $loss, increment: $(opt.increment)"
         epochs == 0 && break
     end
     set_spring_data!(network, spring_data)
+    return nothing
 end
-
-# end # module

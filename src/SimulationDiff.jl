@@ -37,20 +37,20 @@ function simulation_step(accelerations, velocities, positions, p, t)
         end
     end
 
-    modifier(network, accelerations)
+    return modifier(network, accelerations)
 end
 
 function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=nothing)
     vis !== nothing && @warn "Visualizer is not implemented for Diff simulation"
-    
+
     p = (network, 0.1, sim.modifier)
     tspan = (0.0, sim.time)
-    prob = SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p)
+    prob = SecondOrderODEProblem{true}(
+        simulation_step, network.velocities, network.positions, tspan, p
+    )
     #prob = SteadyStateProblem(SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p))
 
-    sol = solve(prob, AutoTsit5(Rosenbrock23()),
-        saveat=tspan[2]
-    )
+    sol = solve(prob, AutoTsit5(Rosenbrock23()); saveat=tspan[2])
     # , reltol=1e-7; saveat = tspan[2])
     #sol = solve(prob, DynamicSS(Tsit5()))
     mat = hcat(sol.u[:]...)
@@ -67,4 +67,3 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
     network.positions = positions
     return mat[Int(size(mat)[1] / 2 + 1):size(mat)[1], :]
 end
-

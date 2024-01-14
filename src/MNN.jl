@@ -7,7 +7,7 @@ using AngleBetweenVectors
 using DifferentialEquations
 using GLMakie
 using CairoMakie
-CairoMakie.activate!(type = "svg")
+CairoMakie.activate!(; type="svg")
 using Graphs
 using LinearAlgebra
 using MetaGraphsNext
@@ -64,12 +64,23 @@ function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
     start_positions = Dict{Int,Vector{Number}}()
     positions = zeros(Float64, 0, 0)
     velocities = zeros(Float64, 0, 0)
-    Network(graph, rows, row_counts, col_fixed, columns, neuron_count, xdist,
-        calc_ydist(xdist), start_positions, positions, velocities)
+    return Network(
+        graph,
+        rows,
+        row_counts,
+        col_fixed,
+        columns,
+        neuron_count,
+        xdist,
+        calc_ydist(xdist),
+        start_positions,
+        positions,
+        velocities,
+    )
 end
 
 function print_graph(network::Network)
-    for col in 1:network.columns
+    for col in 1:(network.columns)
         println("Column: $col")
         for row in 1:network.row_counts[col]
             i = get_neuron_index(network, col, row)
@@ -79,19 +90,18 @@ function print_graph(network::Network)
     end
 end
 
-
 function new_graph()
     return MetaGraphsNext.MetaGraph(
         Graph();  # underlying graph structure
         label_type=Int,
         vertex_data_type=Neuron,
         edge_data_type=Spring,
-        graph_data="Simulation"  # tag for the whole graph
+        graph_data="Simulation",  # tag for the whole graph
     )
 end
 
 function get_neuron_index(network::Network, column::Int, row::Int)
-    return sum(network.row_counts[1:column-1]) + row
+    return sum(network.row_counts[1:(column - 1)]) + row
 end
 
 # label: whether index is "true" (-> internal) index or "label" given by user at
@@ -135,23 +145,22 @@ function set_neuron_velocities!(network::Network, column::Int)
 end
 
 function set_neuron_velocities!(network::Network)
-    for n in 1:network.neuron_count
+    for n in 1:(network.neuron_count)
         network.velocities[:, n] = [0.0, 0.0]
     end
 end
 
 function set_neuron_positions!(network::Network)
-    for col in 1:network.columns
+    for col in 1:(network.columns)
         set_neuron_positions!(network, col)
     end
 end
 
 function initialize_neurons!(network::Network)
     function add_column!(rows::Int, column::Int, fixed::Bool)
-
         function add_neuron!(movable::Bool)
             network.neuron_count += 1
-            network.graph[network.neuron_count] = Neuron(movable)
+            return network.graph[network.neuron_count] = Neuron(movable)
         end
 
         network.row_counts[column] = rows
@@ -164,7 +173,7 @@ function initialize_neurons!(network::Network)
     end
 
     fixed = false
-    for column in 1:network.columns
+    for column in 1:(network.columns)
         rows = fixed ? network.rows : network.rows - 1
         add_column!(rows, column, fixed)
         fixed = !fixed
@@ -172,7 +181,7 @@ function initialize_neurons!(network::Network)
     network.positions = Array{Number,2}(undef, 2, network.neuron_count)
     network.velocities = Array{Number,2}(undef, 2, network.neuron_count)
     set_neuron_positions!(network)
-    set_neuron_velocities!(network)
+    return set_neuron_velocities!(network)
 end
 
 function initialize_springs!(network::Network)
@@ -190,13 +199,12 @@ function initialize_springs!(network::Network)
     function add_spring!(col1, row1, col2, row2)
         if good_index(col1, row1) && good_index(col2, row2)
             add_spring!(
-                get_neuron_index(network, col1, row1),
-                get_neuron_index(network, col2, row2)
+                get_neuron_index(network, col1, row1), get_neuron_index(network, col2, row2)
             )
         end
     end
 
-    for col in 1:network.columns
+    for col in 1:(network.columns)
         fixed = network.col_fixed[col]
         rows = network.row_counts[col]
         for row in 1:rows
@@ -215,7 +223,7 @@ end
 
 function initialize_graph!(network::Network)
     initialize_neurons!(network)
-    initialize_springs!(network)
+    return initialize_springs!(network)
 end
 
 """
@@ -275,7 +283,7 @@ end
 
 function reset!(network)
     set_neuron_positions!(network)
-    set_neuron_velocities!(network)
+    return set_neuron_velocities!(network)
 end
 
 function set_spring_data!(network::Network, spring_data::Dict)
@@ -286,7 +294,7 @@ end
 
 function set_spring_data!(network::Network, spring_data::Vector{Float64})
     springs = Tuple.(edges(network.graph))
-    for i = 1:length(springs)
+    for i in 1:length(springs)
         spring = springs[i]
         network.graph.edge_data[spring].spring_constant = spring_data[i]
     end
@@ -300,7 +308,7 @@ function get_spring_constants_vec(network::Network)
     spring_constants = zeros(Float64, ne(network.graph))
     springs = Tuple.(edges(network.graph))
 
-    for i = 1:length(springs)
+    for i in 1:length(springs)
         spring_constants[i] = network.graph[springs[i][1], springs[i][2]].spring_constant
     end
 
@@ -320,30 +328,45 @@ function calc_loss(network::Network, sim::Simulation, behaviours::Vector{Behavio
     return l / length(behaviours)
 end
 
-function calc_losses!(network, candidates, losses,
-    behaviours::Vector{Behaviour}; vis=nothing, delta=0.01, epochs=250)
-
+function calc_losses!(
+    network,
+    candidates,
+    losses,
+    behaviours::Vector{Behaviour};
+    vis=nothing,
+    delta=0.01,
+    epochs=250,
+)
     for i in eachindex(losses)
         set_spring_data!(network, candidates[i])
-        losses[i] = calc_loss(network, behaviours; vis=vis, delta=delta,
-            epochs=epochs)
+        losses[i] = calc_loss(network, behaviours; vis=vis, delta=delta, epochs=epochs)
     end
 end
 
-function calc_losses_parallel!(network, candidates, losses,
-    behaviours::Vector{Behaviour}; vis=nothing, delta=0.01, epochs=250)
-
+function calc_losses_parallel!(
+    network,
+    candidates,
+    losses,
+    behaviours::Vector{Behaviour};
+    vis=nothing,
+    delta=0.01,
+    epochs=250,
+)
     candidate_is = [i for i in eachindex(candidates)]
-    chunks = Iterators.partition(candidate_is, max(length(candidate_is) ÷ Threads.nthreads(), 1))
+    chunks = Iterators.partition(
+        candidate_is, max(length(candidate_is) ÷ Threads.nthreads(), 1)
+    )
     tasks = map(chunks) do i
         if length(i) == 1
             i = i[1]
-            Threads.@spawn calc_loss(deepcopy($network), $(candidates[i]),
-                behaviours, epochs=$epochs)
+            Threads.@spawn calc_loss(
+                deepcopy($network), $(candidates[i]), behaviours, epochs=$epochs
+            )
         else
-            for j = i[1]:i[2]
-                Threads.@spawn calc_loss(deepcopy($network), $(candidates[j]),
-                    behaviours, epochs=$epochs)
+            for j in i[1]:i[2]
+                Threads.@spawn calc_loss(
+                    deepcopy($network), $(candidates[j]), behaviours, epochs=$epochs
+                )
             end
         end
     end
@@ -354,7 +377,9 @@ function calc_losses_parallel!(network, candidates, losses,
 end
 
 function train!(network::Network, epochs::Int, trainer::Trainer)
-    train!(network, epochs, trainer.behaviours, trainer.simulation, trainer.optimization)
+    return train!(
+        network, epochs, trainer.behaviours, trainer.simulation, trainer.optimization
+    )
 end
 
 function behaviour_unmoving(network::Network)
@@ -400,7 +425,7 @@ function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=
                 goals[:, i, row] .= [0.0, 0.0]
                 b_goals[neuron_i] = goals[:, i, row]
             else
-                others = goals[:, 1:i-1, row]
+                others = goals[:, 1:(i - 1), row]
                 goals[:, i, row] .= random_distanced_vector(others, m_goal, min_angle)
                 b_goals[neuron_i] = goals[:, i, row]
             end
@@ -410,7 +435,7 @@ function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=
             neuron = get_neuron(network, neuron_i)
             !neuron.movable && continue
             if length(b_modifiers) == 0 || rand() > 0.5
-                others = modifiers[:, 1:i-1, row]
+                others = modifiers[:, 1:(i - 1), row]
                 modifiers[:, i, row] .= random_distanced_vector(others, m_mod, min_angle)
                 b_modifiers[neuron_i] = modifiers[:, i, row]
             end
@@ -431,9 +456,14 @@ include("PPSOptimizer.jl")
 include("Evolution.jl")
 include("Backpropagation.jl")
 
-function simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
+function simulate!(
+    network::Network,
+    sim::Simulation,
+    behaviour::Behaviour;
+    vis::Union{Visualizer,Nothing}=nothing,
+)
     sim.modifier = (network, acc) -> addvelocity!(network, acc, behaviour.modifiers)
-    simulate!(network, sim, vis=vis)
+    return simulate!(network, sim; vis=vis)
 end
 
 end

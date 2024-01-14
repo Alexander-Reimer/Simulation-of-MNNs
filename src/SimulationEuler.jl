@@ -20,14 +20,17 @@ function calculate_force(network::Network, n::Int)
     # neighbouring neurons
     nneurons = neighbors(network.graph, n)
     for nn in nneurons
-        neuron = get_neuron(network, n, label=false)
-        nneuron = get_neuron(network, nn, label=false)
-        spring = get_spring(network, n, nn, label=false)
+        neuron = get_neuron(network, n; label=false)
+        nneuron = get_neuron(network, nn; label=false)
+        spring = get_spring(network, n, nn; label=false)
         diff = neuron.pos - nneuron.pos
-        f += displacement2force(spring.length - norm(diff),
-            spring.spring_constant) * diff / norm(diff)
+        f +=
+            displacement2force(spring.length - norm(diff), spring.spring_constant) * diff /
+            norm(diff)
         if isnan.(f) != [0, 0]
-            throw("calculated force as NaN at neighboring neuron $nn with pos $(neuron.pos)")
+            throw(
+                "calculated force as NaN at neighboring neuron $nn with pos $(neuron.pos)"
+            )
         end
     end
     return f
@@ -36,12 +39,12 @@ end
 function update_position!(network::Network, n::Int, delta::Number)
     neuron = get_neuron(network, n)
     if neuron.movable == false
-        return
+        return nothing
     end
     f = calculate_force(network, n) * delta
     network.velocities[:, n] .+= f
     neuron.velocity .*= 0.95
-    neuron.pos .+= neuron.velocity * delta
+    return neuron.pos .+= neuron.velocity * delta
 end
 
 function addvelocity!(network::Network, delta::Number, v::Number)
@@ -55,7 +58,7 @@ function simulate!(network::Network, sim::Euler; vis::Union{Visualizer,Nothing}=
     steps = sim.time / sim.delta
     for _ in 1:steps
         sim.modifier(network, sim.delta)
-        for n in 1:network.neuron_count
+        for n in 1:(network.neuron_count)
             update_position!(network, n, sim.delta)
         end
         if vis !== nothing

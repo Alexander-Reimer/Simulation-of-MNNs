@@ -13,7 +13,7 @@ function Evolution(net::Network)
     popsize = 10
     simepochs = 500
     mutation_strength = 0.00005
-    candidates = [mutation(spring_data, mutation_strength) for _ = 1:popsize]
+    candidates = [mutation(spring_data, mutation_strength) for _ in 1:popsize]
     return Evolution(true, mutation_strength, popsize, candidates, simepochs)
 end
 
@@ -28,7 +28,9 @@ function create_mutation(spring_data::Vector{Float64}, strength=0.1)
     return mutate!(deepcopy(spring_data), strength)
 end
 
-function create_mutations!(spring_data::Vector{Float64}, mutations::Vector{Vector{Float64}}; strength=0.1)
+function create_mutations!(
+    spring_data::Vector{Float64}, mutations::Vector{Vector{Float64}}; strength=0.1
+)
     for i in eachindex(mutations)
         mutations[i] = create_mutation(spring_data, strength)
     end
@@ -65,7 +67,6 @@ end
 #     # @info "Final loss: $(best_los)"
 # end
 
-
 function mutation(spring_data, strength)
     return spring_data + (rand(length(spring_data)) .- 0.5) * strength
 end
@@ -80,11 +81,13 @@ function get_parent_index(index)
 end
 
 function cross_over(candidates, index, out_size)
-    out = [zeros(length(candidates[1])) for i = 1:out_size]
-    for i = 1:Int(ceil(out_size / 2))
-        out1, out2 = single_point_crossover(candidates[get_parent_index(index)], candidates[get_parent_index(index)])
-        out[i*2-1] = out1
-        out[i*2] = out2
+    out = [zeros(length(candidates[1])) for i in 1:out_size]
+    for i in 1:Int(ceil(out_size / 2))
+        out1, out2 = single_point_crossover(
+            candidates[get_parent_index(index)], candidates[get_parent_index(index)]
+        )
+        out[i * 2 - 1] = out1
+        out[i * 2] = out2
     end
     return out
 end
@@ -93,19 +96,25 @@ function single_point_crossover(can1, can2)
     l = length(can1)
     out1 = zeros(l)
     out2 = zeros(l)
-    p = rand(2:l-1)
+    p = rand(2:(l - 1))
     out1[1:p] = can1[1:p]
     out2[1:p] = can2[1:p]
-    out1[p+1:l] = can2[p+1:l]
-    out2[p+1:l] = can1[p+1:l]
+    out1[(p + 1):l] = can2[(p + 1):l]
+    out2[(p + 1):l] = can1[(p + 1):l]
     return (out1, out2)
 end
 
-function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, sim::Simulation, opt::Evolution)
+function train!(
+    network::Network,
+    epochs::Int,
+    behaviours::Vector{Behaviour},
+    sim::Simulation,
+    opt::Evolution,
+)
     loss = calc_loss(network, sim, behaviours)
     spring_data = get_spring_constants_vec(network)
 
-    for _ = 1:epochs
+    for _ in 1:epochs
         # TODO: check if pop size ever changes; if no, no need to allocate new
         # vector every time
         losses = Vector{Float64}(undef, length(opt.candidates))
@@ -124,19 +133,22 @@ function train!(network::Network, epochs::Int, behaviours::Vector{Behaviour}, si
         end
         println(loss)
 
-        next_gen = [zeros(length(spring_data)) for _ = 1:opt.popsize]
-        next_gen[1:Int(floor(opt.popsize / 5))] = opt.candidates[index[1:Int(floor(opt.popsize / 5))]]  # copying best 20%
-        next_gen[Int(floor(opt.popsize / 5))+1:length(next_gen)] = cross_over(opt.candidates, index, Int(ceil(opt.popsize * 0.8)))  # other 80% are crossover
+        next_gen = [zeros(length(spring_data)) for _ in 1:(opt.popsize)]
+        next_gen[1:Int(floor(opt.popsize / 5))] = opt.candidates[index[1:Int(
+            floor(opt.popsize / 5)
+        )]]  # copying best 20%
+        next_gen[(Int(floor(opt.popsize / 5)) + 1):length(next_gen)] = cross_over(
+            opt.candidates, index, Int(ceil(opt.popsize * 0.8))
+        )  # other 80% are crossover
         opt.candidates = copy(next_gen)
     end
-    set_spring_data!(network, spring_data)
+    return set_spring_data!(network, spring_data)
 end
 
 #TODO
 # function train2!(pop_size, network, trainer)
 #     spring_data = get_spring_constants_vec(network)
 #     loss = calc_loss(spring_data, network, trainer)
-
 
 #     for i = 1:1
 #         candidates = [mutation(spring_data, 0.0001) for i = 1:pop_size]
