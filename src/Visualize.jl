@@ -105,3 +105,30 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
     display(fig)
     return vis
 end
+
+function draw!(r)
+    fig = GLMakie.Figure()
+    ax = Axis(fig[1, 1])
+    global ox = Observable(zeros(Float64, Int(size(r)[1] / 2)))
+    global oy = Observable(zeros(Float64, Int(size(r)[1] / 2)))
+    GLMakie.scatter!(ox, oy; marker=:circle, markersize=25, color=:blue)
+    display(fig)
+    sleep(1)
+    @info "Started!"
+
+    x = zeros(Float64, Int(size(r)[1] / 2))
+    y = zeros(Float64, Int(size(r)[1] / 2))
+    for i in 1:(size(r)[2])
+        for j in 1:size(r)[1]
+            if j % 2 == 0
+                y[Int(j / 2)] = r[j, i]
+            else
+                x[Int(j / 2 + 0.5)] = r[j, i]
+            end
+        end
+        ox[] = x
+        oy[] = y
+
+        sleep(0.08)
+    end
+end
