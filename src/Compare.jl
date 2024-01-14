@@ -29,11 +29,11 @@ macro init_comp()
         open(filepath; write=true, create=true) do io
             CSV.write(io, df)
         end
-        num_behaviours = 3
-        epochs = 50
-        sim_time = 100
+        num_behaviours = 5
+        epochs = 100
+        sim_time = 50
         rows = 5
-        columns = 5
+        columns = 4
         mag_goals = 1
         mag_modifier = 0.1
     end
@@ -52,11 +52,16 @@ macro init_net()
 end
 
 function save_df(filepath, df)
-    open(filepath; write=true) do io
-        CSV.write(io, df)
-        # flush(io)
+    while true
+        try
+            open(filepath; write=true) do io
+                CSV.write(io, df)
+            end
+            break
+        catch
+            sleep(0.001)
+        end
     end
-    # empty!(df)
 end
 
 macro save(x)
@@ -105,7 +110,7 @@ macro makeentry()
 end
 
 macro train!()
-    estep = 5
+    estep = 10
     ex = quote
         max_epochs = epochs
         for epochs in 0:($estep):max_epochs
@@ -123,8 +128,8 @@ typename(t) = typename(typeof(t))
 function num_behaviours(opt_type)
     name = "$(typename(opt_type))NumBehaviours"
     @init_comp
-    max_num_behaviours = 10
-    @sync for num_behaviours in 1:max_num_behaviours, _ in 1:50
+    max_num_behaviours = 7
+    @sync for num_behaviours in 1:max_num_behaviours, _ in 1:15
         Threads.@spawn begin
             @init_net()
             @trainer(opt_type)
@@ -138,7 +143,6 @@ function epochs(opt_type)
     @init_comp
     max_epochs = epochs
     step = 10
-    # Threads.@threads
     @sync for _ in 1:5
         Threads.@spawn begin
             @init_net()
@@ -153,18 +157,18 @@ function epochs(opt_type)
 end
 
 function min_angle(opt_type)
+    name = "$(typename(opt_type))MinAngle"
     @init_comp
-    @sync for angle in 0:0.1:(π / 3)
-        for _ in 1:5
+    @sync for angle in 0:0.1:(2π / (5 + 3))
+        for _ in 1:3
             Threads.@spawn begin
                 @init_net
+                min_angle = $angle
                 @trainer(opt_type)
-                train!(net, epochs, t)
-                @makeentry
+                @train!
             end
         end
     end
-    @save("$(typename(opt_type))MinAngle")
 end
 
 function num_columns(opt_type)

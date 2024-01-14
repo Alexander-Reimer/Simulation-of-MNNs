@@ -1,20 +1,18 @@
 module MNN
 
-export Network, simulate!, Trainer, train!, Visualizer, draw!, reset!, PPS
+export Network, simulate!, Trainer, train!, Visualizer, reset!, PPS
 
-# using ..PPSOptimizer
 using AngleBetweenVectors
+using CairoMakie # visualization (pdf-capable backend)
 using DifferentialEquations
-using GLMakie
-using CairoMakie
-CairoMakie.activate!(; type="svg")
+using GLMakie # visualization (interactive backend)
 using Graphs
-using LinearAlgebra
+using LinearAlgebra # norm, normalize
 using MetaGraphsNext
-using Observables
-# using Revise
+using Observables # updating visualization
+using Random # UUIDs & setting rand seed
 using StaticArrays
-using Random
+CairoMakie.activate!()
 
 struct Neuron
     movable::Bool
