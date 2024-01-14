@@ -29,7 +29,6 @@ end
 distance(x1, y1, x2, y2) = sqrt((x1 - x2)^2 + (y1 - y2)^2)
 
 function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
-    @info "test"
     neuron_xs = Observable(Vector{Float64}(undef, network.neuron_count), ignore_equal_values=true)
     neuron_ys = Observable(Vector{Float64}(undef, network.neuron_count), ignore_equal_values=true)
     throttle(1 / max_fps, neuron_xs)
@@ -55,17 +54,25 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
 
     if behaviour !== nothing
         for (n, coords) in behaviour.goals
-            start_x, start_y = network.start_positions[n]
-            scatter!(start_x + coords[1], start_y + coords[2], marker=:circle, color=:transparent, strokewidth=1, strokecolor=:red)
-            dist = distance(neuron_xs.val[n], neuron_ys.val[n], start_x + coords[1], start_y + coords[2])
+            start_pos = network.start_positions[n]
+            goal_x, goal_y = goal_pos = start_pos + coords
+            scatter!(goal_x, goal_y, marker=:circle, color=:transparent, strokewidth=1, strokecolor=:red)
+            
+            x, y = pos = [neuron_xs.val[n], neuron_ys.val[n]]
+            v = goal_pos - pos
+            vx, vy = v - normalize(v) * 0.15
+
+            dist = distance(x, y, goal_pos[1], goal_pos[2])
             if dist > 0.1
-                coords -= normalize(coords) * 0.15
-                arrows!([start_x], [start_y], [coords[1]], [coords[2]], color=:red, align = :origin)
+                # shorten the arrow by 0.15 units so the tip is in middle of the circle
+                arrows!([x], [y], [vx], [vy], color=:red)
             end
         end
+
         for (n, coords) in behaviour.modifiers
             coords *= 10
             start_coords = [neuron_xs.val[n], neuron_ys.val[n]]
+            # shorten the arrow by 0.15 units so the tip is in middle of the circle
             start_coords -= normalize(coords) * 0.15
             x, y = start_coords
             change_x, change_y = coords

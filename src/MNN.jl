@@ -1,6 +1,6 @@
 module MNN
 
-export Network, simulate!, Trainer, train!, Visualizer, netpush!, netpull!, draw!, reset!, train_pps!, PPS
+export Network, simulate!, Trainer, train!, Visualizer, draw!, reset!, PPS
 
 # using ..PPSOptimizer
 using AngleBetweenVectors
