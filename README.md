@@ -6,15 +6,7 @@
 [![Coverage](https://codecov.io/gh/alex/MNN.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alex/MNN.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
-TODO-Liste: <https://github.com/users/Alexander-Reimer/projects/11>
-
-Bei Verwendung von NixOS notwendig vorher in Shell, damit GLMakie funktioniert:
-
-```bash
-LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib";
-```
-
-## Zusammenfassung
+## Summary (German)
 
 Wir wollen uns mit dem neuen, vergleichsweise wenig erforschtem Bereich der
 Mechanical Neural Networks, kurz MNNs, beschäftigen. Während die bisherige
@@ -29,3 +21,14 @@ noch nicht ausprobiert wurde.
 Dafür werden wir uns jedoch auf die Anwendung dieser Algorithmen in einer
 Simulation beschränken. Die Ergebnisse sollten dennoch einen guten Startpunkt
 für reale MNNs bieten.
+
+## Usage
+
+### NixOS
+
+When using NixOS, activating the development shell is necessary to make GLMakie work:
+
+```bash
+cd /path/to/this/project
+nix-shell .
+```
