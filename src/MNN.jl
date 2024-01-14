@@ -1,6 +1,6 @@
 module MNN
 
-export Network, simulate!, Trainer, train!, Visualizer, reset!, PPS
+export Network, simulate!, Trainer, train!, Visualizer, reset!, PPS, Evolution
 
 using AngleBetweenVectors
 using CairoMakie # visualization (pdf-capable backend)

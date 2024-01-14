@@ -29,8 +29,8 @@ macro init_comp()
         open(filepath; write=true, create=true) do io
             CSV.write(io, df)
         end
-        num_behaviours = 5
-        epochs = 100
+        num_behaviours = 3
+        epochs = 200
         sim_time = 50
         rows = 5
         columns = 4
@@ -81,6 +81,11 @@ macro trainer(opt)
             MNN.Diff(sim_time),
             $opt(net),
         )
+        if $opt <: MNN.Evolution
+            t.optimization.mutation_strength = 0.05
+            t.optimization.popsize = 10
+            @info "Adjusted2!"
+        end
     end
     return esc(ex)
 end
@@ -110,7 +115,7 @@ macro makeentry()
 end
 
 macro train!()
-    estep = 10
+    estep = 5
     ex = quote
         max_epochs = epochs
         for epochs in 0:($estep):max_epochs
@@ -140,20 +145,15 @@ function num_behaviours(opt_type)
 end
 
 function epochs(opt_type)
+    name = "$(typename(opt_type))Epochs"
     @init_comp
-    max_epochs = epochs
-    step = 10
-    @sync for _ in 1:5
+    @sync for _ in 1:10
         Threads.@spawn begin
-            @init_net()
+            @init_net
             @trainer(opt_type)
-            for epochs in 0:step:max_epochs
-                epochs > 0 && train!(net, step, t)
-                @makeentry
-            end
+            @train!
         end
     end
-    @save("$(typename(opt_type))Epochs")
 end
 
 function min_angle(opt_type)
@@ -211,6 +211,19 @@ function num_rows_columns(opt_type)
             epochs = $epochs
             @init_net
             @trainer(opt_type)
+            @train!
+        end
+    end
+end
+
+function mutation_strength(opt_type::T) where {T<:MNN.Evolution}
+    name = "$(typename(opt_type))MutationStrength"
+    @init_comp
+    @sync for strength in 0.0001:0.0001:0.001, _ in 1:5
+        Threads.@spawn begin
+            @init_net
+            @trainer(opt_type)
+            t.optimization.mutation_strength = $strength
             @train!
         end
     end
