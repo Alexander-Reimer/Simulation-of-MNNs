@@ -12,7 +12,7 @@ using MetaGraphsNext
 using Observables # updating visualization
 using Random # UUIDs & setting rand seed
 using StaticArrays
-CairoMakie.activate!()
+# CairoMakie.activate!()
 
 struct Neuron
     movable::Bool
@@ -279,9 +279,12 @@ function loss(network::Network, behaviour::Behaviour)
     return s / length(behaviour.goals)
 end
 
-function reset!(network)
+function reset!(network; vis=nothing)
     set_neuron_positions!(network)
-    return set_neuron_velocities!(network)
+    set_neuron_velocities!(network)
+    if vis !== nothing
+        update_positions!(vis, network)
+    end
 end
 
 function set_spring_data!(network::Network, spring_data::Dict)

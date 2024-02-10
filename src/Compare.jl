@@ -30,7 +30,7 @@ macro init_comp()
             CSV.write(io, df)
         end
         num_behaviours = 3
-        epochs = 200
+        epochs = 50
         sim_time = 50
         rows = 5
         columns = 4
@@ -84,7 +84,6 @@ macro trainer(opt)
         if $opt <: MNN.Evolution
             t.optimization.mutation_strength = 0.05
             t.optimization.popsize = 10
-            @info "Adjusted2!"
         end
     end
     return esc(ex)

@@ -4,7 +4,7 @@ mutable struct Euler <: Simulation
     showfps::Bool
     modifier::Function
 end
-Euler() = Euler(0.01, false, NoModifier(), 1.0)
+Euler(time) = Euler(time, 0.01, false, (network, delta) -> nothing)
 
 function displacement2force(diff, spring_constant)
     if abs(diff) > 0.1
@@ -20,10 +20,10 @@ function calculate_force(network::Network, n::Int)
     # neighbouring neurons
     nneurons = neighbors(network.graph, n)
     for nn in nneurons
-        neuron = get_neuron(network, n; label=false)
-        nneuron = get_neuron(network, nn; label=false)
+        # neuron = get_neuron(network, n; label=false)
+        # nneuron = get_neuron(network, nn; label=false)
         spring = get_spring(network, n, nn; label=false)
-        diff = neuron.pos - nneuron.pos
+        diff = network.positions[:, n] - network.positions[:, nn]
         f +=
             displacement2force(spring.length - norm(diff), spring.spring_constant) * diff /
             norm(diff)
@@ -43,8 +43,8 @@ function update_position!(network::Network, n::Int, delta::Number)
     end
     f = calculate_force(network, n) * delta
     network.velocities[:, n] .+= f
-    neuron.velocity .*= 0.95
-    return neuron.pos .+= neuron.velocity * delta
+    network.velocities[:, n] *= 0.95
+    return network.positions[:, n] .+= network.velocities[:, n] * delta
 end
 
 function addvelocity!(network::Network, delta::Number, v::Number)
@@ -57,13 +57,17 @@ function simulate!(network::Network, sim::Euler; vis::Union{Visualizer,Nothing}=
     sim.showfps ? start_time = time() : nothing
     steps = sim.time / sim.delta
     for _ in 1:steps
-        sim.modifier(network, sim.delta)
+        accelerations = zeros(Float64, 2, network.row_counts[1])
+        sim.modifier(network, accelerations)
+        for row in 1:network.row_counts[1]
+            network.velocities[:, row] .+= accelerations[:, row] * sim.delta
+        end
         for n in 1:(network.neuron_count)
             update_position!(network, n, sim.delta)
         end
         if vis !== nothing
             update_positions!(vis, network)
-            sleep(sim.delta)
+            sleep(sim.delta / 100)
         end
         # TODO: adjust delta automatically dependant on fps?
     end
