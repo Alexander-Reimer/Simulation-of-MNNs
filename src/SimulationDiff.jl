@@ -15,12 +15,12 @@ function simulation_step(accelerations, velocities, positions, p, t)
     diff = MVector{2,Float64}(undef)
     positionsn = MVector{2,Float64}(undef)
     # diff = Vector{Float64}(undef,2)
-    @fastmath @inbounds @simd ivdep for neuron in vertices(graph)
+    for neuron in vertices(graph)
         if graph[neuron].movable  # is movable
             force .= [0.0, 0.0]
             positionsn .= positions[:, neuron]
 
-            @simd ivdep for neighbor in neighbors(graph, neuron)
+            for neighbor in neighbors(graph, neuron)
                 spring = graph[neighbor, neuron]
                 diff = positionsn - positions[:, neighbor]
                 dist = norm(diff)
@@ -41,7 +41,7 @@ function simulation_step(accelerations, velocities, positions, p, t)
 end
 
 function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=nothing)
-    p = (network, 1, sim.modifier)
+    p = (network, 0.2, sim.modifier)
     tspan = (0.0, sim.time)
     # prob = SteadyStateProblem(SecondOrderODEProblem{true}(
     #     simulation_step, network.velocities, network.positions, tspan, p
@@ -56,16 +56,21 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
         integrator = init(prob, AutoTsit5(Rosenbrock23()))
     end
     for integ in integrator
-        global myinteg = integ
         if vis !== nothing
             network.positions = integ.sol.u[end].x[2]
             update_positions!(vis, network)
             @info "t: $(integ.t)"
             sleep(0.01)
         end
+        # exit if sum of changes in position is small enough
         if sum(abs.(integ.sol.u[end].x[1])) < 0.001
+            @info "Early break at: $(integ.t)"
             break
         end
     end
+    if (integrator.t == sim.time)
+        @warn "Simulation did not reach steady state"
+    end
     network.positions = integrator.sol.u[end].x[2]
+    return integrator.t
 end

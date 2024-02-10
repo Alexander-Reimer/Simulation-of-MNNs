@@ -422,24 +422,17 @@ function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=
             neuron_i = get_neuron_index(network, network.columns, row)
             neuron = get_neuron(network, neuron_i)
             !neuron.movable && continue
-            if rand() < 0.5
-                goals[:, i, row] .= [0.0, 0.0]
-                b_goals[neuron_i] = goals[:, i, row]
-            else
-                others = goals[:, 1:(i - 1), row]
-                goals[:, i, row] .= random_distanced_vector(others, m_goal, min_angle)
-                b_goals[neuron_i] = goals[:, i, row]
-            end
+            others = goals[:, 1:(i - 1), row]
+            goals[:, i, row] .= random_distanced_vector(others, m_goal, min_angle)
+            b_goals[neuron_i] = goals[:, i, row]
         end
         for row in shuffle(1:network.row_counts[1])
             neuron_i = get_neuron_index(network, 1, row)
             neuron = get_neuron(network, neuron_i)
             !neuron.movable && continue
-            if length(b_modifiers) == 0 || rand() > 0.5
-                others = modifiers[:, 1:(i - 1), row]
-                modifiers[:, i, row] .= random_distanced_vector(others, m_mod, min_angle)
-                b_modifiers[neuron_i] = modifiers[:, i, row]
-            end
+            others = modifiers[:, 1:(i - 1), row]
+            modifiers[:, i, row] .= random_distanced_vector(others, m_mod, min_angle)
+            b_modifiers[neuron_i] = modifiers[:, i, row]
         end
         # behaviours[i] = behaviour_unmoving(network)
         behaviours[i] = Behaviour(b_goals, true, b_modifiers)

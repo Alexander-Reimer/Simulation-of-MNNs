@@ -25,13 +25,14 @@ end
 macro init_comp()
     ex = quote
         global df = create_df()
+        global lk = ReentrantLock()
         filepath = "src/data/" * name * "_" * string(now()) * ".csv"
         open(filepath; write=true, create=true) do io
             CSV.write(io, df)
         end
         num_behaviours = 3
-        epochs = 50
-        sim_time = 50
+        epochs = 500
+        sim_time = 1000
         rows = 5
         columns = 4
         mag_goals = 1
@@ -45,22 +46,17 @@ macro init_net()
     ex = quote
         id = uuid1()
         Random.seed!(id.value)
-        min_angle = π / (num_behaviours + 1)
+        # found through experimentation; this ensures that create_behaviours isn't caught in
+        # infinite loop trying to get suffucuently distant vectors
+        min_angle = num_behaviours <= 1 ? 0 : π / (num_behaviours + 0)
         net = MNN.Network(columns, rows)
     end
     return esc(ex)
 end
 
 function save_df(filepath, df)
-    while true
-        try
-            open(filepath; write=true) do io
-                CSV.write(io, df)
-            end
-            break
-        catch
-            sleep(0.001)
-        end
+    open(filepath; write=true) do io
+        CSV.write(io, df)
     end
 end
 
@@ -91,6 +87,7 @@ end
 
 macro makeentry()
     ex = quote
+        lock(lk)
         push!(
             df,
             (
@@ -109,6 +106,7 @@ macro makeentry()
             ),
         )
         save_df(filepath, df)
+        unlock(lk)
     end
     return esc(ex)
 end
@@ -132,11 +130,13 @@ typename(t) = typename(typeof(t))
 function num_behaviours(opt_type)
     name = "$(typename(opt_type))NumBehaviours"
     @init_comp
-    max_num_behaviours = 7
-    @sync for num_behaviours in 1:max_num_behaviours, _ in 1:15
+    max_num_behaviours = 5
+    @sync for num_behaviours in 1:max_num_behaviours, _ in 1:3
         Threads.@spawn begin
             @init_net()
+            @info "Created network!"
             @trainer(opt_type)
+            @info "Created trainer!"
             @train!
         end
     end
