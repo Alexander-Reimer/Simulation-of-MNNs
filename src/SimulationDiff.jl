@@ -59,12 +59,12 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
         if vis !== nothing
             network.positions = integ.sol.u[end].x[2]
             update_positions!(vis, network)
-            @info "t: $(integ.t)"
+            # @info "t: $(integ.t)"
             sleep(0.01)
         end
         # exit if sum of changes in position is small enough
         if sum(abs.(integ.sol.u[end].x[1])) < 0.001
-            @info "Early break at: $(integ.t)"
+            # @info "Early break at: $(integ.t)"
             break
         end
     end

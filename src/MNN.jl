@@ -460,4 +460,107 @@ function simulate!(
     return simulate!(network, sim; vis=vis)
 end
 
+function get_user_behaviour(network::Network)
+    reset!(network)
+    vis = Visualizer(network)
+    scene = vis.fig.scene
+    # https://github.com/MakieOrg/Makie.jl/issues/653#issuecomment-660009208
+    glfw_window = GLMakie.to_native(display(vis.fig))
+
+    # MODIFIERS
+    n = Observable(0)
+
+    vec_points = Array{Observable{Point2f},1}(undef, network.neuron_count)
+    for i in eachindex(vec_points)
+        vec_points[i] = Observable(Point2f([0.0, 0.0]))
+    end
+
+    already_created = Set()
+
+    is_clicked = Observable(false)
+
+    on(events(scene).mousebutton) do event
+        if event.button == Mouse.right && event.action == Mouse.press
+            plt, n = pick(vis.fig)
+            # if neuron in first column or neuron between (non inclusive) of first and last column
+            if !get_neuron(network, n).movable || network.row_counts[1] < n < get_neuron_index(network, network.columns, 1)
+                return nothing
+            end
+            is_clicked[] = true
+            if (n ∈ already_created)
+                return nothing
+            end
+            push!(already_created, n)
+            n_pos = network.positions[:, n]
+            vec_points[n][] = mouseposition(vis.ax)
+            vec_point = vec_points[n]
+            is_modifier = n <= network.row_counts[1]
+
+            if (is_modifier)
+                dx1 = lift(a -> [n_pos[1] - a[1]], vec_point)
+                dy1 = lift(a -> [n_pos[2] - a[2]], vec_point)
+                start = lift(dx1, dy1) do dx, dy
+                    return n_pos - normalize([dx[1], dy[1]]) * 0.12
+                end
+            else
+                dx1 = lift(a -> [a[1] - n_pos[1]], vec_point)
+                dy1 = lift(a -> [a[2] - n_pos[2]], vec_point)
+                start = lift(dx1, dy1) do dx, dy
+                    return n_pos
+                end
+            end
+            start_x = lift(a -> [a[1]], start)
+            start_y = lift(a -> [a[2]], start)
+
+            if (is_modifier)
+                arrows!(start_x, start_y, dx1, dy1; color=:blue, align=:tailend)
+            else
+                arrows!(start_x, start_y, dx1, dy1; color=:red)
+            end
+        end
+    end
+
+    on(events(scene).mousebutton) do event
+        if event.button == Mouse.left && event.action == Mouse.press
+            is_clicked[] = !is_clicked[]
+        end
+    end
+
+    on(events(scene).mouseposition) do event
+        if is_clicked[]
+            vec_points[n][] = mouseposition(vis.ax)
+            notify(vec_points[n])
+        end
+    end
+
+    finished = Observable(false)
+
+    on(events(scene).keyboardbutton) do event
+        if event.action == Keyboard.press && event.key == Keyboard.space
+            finished[] = true
+        end
+    end
+    while !finished[]
+        sleep(0.1)
+    end
+    # see above
+    GLMakie.GLFW.SetWindowShouldClose(glfw_window, true) # this will close the window after all callbacks are finished
+    goals = Dict()
+    modifiers = Dict()
+    for row in 1:network.row_counts[1]
+        n = get_neuron_index(network, 1, row)
+        if (n ∈ already_created)
+            modifiers[n] = (network.start_positions[n] - vec_points[n][]) / 10
+        end
+    end
+    for row in 1:network.row_counts[end]
+        n = get_neuron_index(network, network.columns, row)
+        if (n ∈ already_created)
+            goals[n] = vec_points[n][] - network.start_positions[n]
+        end
+    end
+
+    return Behaviour(goals, true, modifiers)
+end
+
 end
