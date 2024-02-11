@@ -39,7 +39,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
     throttle(1 / max_fps, neuron_ys)
     edge_pairs = collect(keys(network.graph.edge_data))
 
-    fig = Figure(scene = MNN.Scene(camera = MNN.campixel!))
+    fig = Figure(; scene=MNN.Scene(; camera=MNN.campixel!))
     ax = Axis(
         fig[1, 1];
         aspect=DataAspect(),
@@ -80,28 +80,29 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
                 strokecolor=:red,
             )
 
-            x, y = pos = [neuron_xs.val[n], neuron_ys.val[n]]
-            v = goal_pos - pos
-            vx, vy = v - normalize(v) * 0.15
-
-            dist = distance(x, y, goal_pos[1], goal_pos[2])
-            if dist > 0.1
+            pos = @lift([$neuron_xs[n], $neuron_ys[n]])
+            x = @lift([$pos[1]])
+            y = @lift([$pos[2]])
+            v = lift(pos) do pos
+                w = goal_pos - pos
                 # shorten the arrow by 0.15 units so the tip is in middle of the circle
-                arrows!([x], [y], [vx], [vy]; color=:red)
+                return w - normalize(w) * 0.15
             end
+            vx = @lift([$v[1]])
+            vy = @lift([$v[2]])
+
+            arrows!(x, y, vx, vy; color=:red)
         end
 
         for (n, coords) in behaviour.modifiers
             coords *= 10
-            start_coords = [neuron_xs.val[n], neuron_ys.val[n]]
             # shorten the arrow by 0.15 units so the tip is in middle of the circle
-            start_coords -= normalize(coords) * 0.15
-            x, y = start_coords
+            start_coords = @lift([$neuron_xs[n], $neuron_ys[n]] - normalize(coords) * 0.15)
+            x = @lift([$start_coords[1]])
+            y = @lift([$start_coords[2]])
             change_x, change_y = coords
-            dist = distance(x, y, x + change_x, y + change_y)
-            if dist > 0.1
-                arrows!([x], [y], [change_x], [change_y]; color=:blue, align=:tailend)
-            end
+
+            arrows!(x, y, [change_x], [change_y]; color=:blue, align=:tailend)
         end
     end
     hidedecorations!(ax)
