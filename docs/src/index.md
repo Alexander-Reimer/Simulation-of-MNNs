@@ -4,7 +4,7 @@ CurrentModule = MNN
 
 # MNN
 
-Documentation for [MNN](https://github.com/Alexander-Reimer/MNN.jl).
+Documentation for [MNN](https://github.com/Alexander-Reimer/Simulation-of-MNNs).
 
 ```@index
 ```
