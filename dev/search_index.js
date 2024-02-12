@@ -1,0 +1,3 @@
+var documenterSearchIndex = {"docs":
+[{"location":"","page":"Home","title":"Home","text":"CurrentModule = MNN","category":"page"},{"location":"#MNN","page":"Home","title":"MNN","text":"","category":"section"},{"location":"","page":"Home","title":"Home","text":"Documentation for MNN.","category":"page"},{"location":"","page":"Home","title":"Home","text":"","category":"page"},{"location":"","page":"Home","title":"Home","text":"Modules = [MNN]","category":"page"},{"location":"#MNN.calc_ydist-Tuple{Any}","page":"Home","title":"MNN.calc_ydist","text":"calc_ydist(xdist)\n\nCalculate necessary distance on y axis to create an equilateral triangle with given distance between columns on x axis.\n\n\n\n\n\n","category":"method"}]
+}
