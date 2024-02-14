@@ -1,8 +1,8 @@
 # MNN
 
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alexander-reimer.github.io/Simulation-of-MNNs/dev/)
-[![Build Status](https://github.com/alex/MNN.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/alex/MNN.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/alex/MNN.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alex/MNN.jl)
+[![Build Status](https://github.com/alexander-reimer/Simulation-of-MNNs/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/alexander-reimer/Simulation-of-MNNs/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/alexander-reimer/Simulation-of-MNNs/branch/main/graph/badge.svg)](https://codecov.io/gh/alexander-reimer/Simulation-of-MNNs)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
 ## Summary (German)
