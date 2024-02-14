@@ -1,3 +1,5 @@
+docs/build/
+
 *.dot
 *.out.ps
 ## Core latex/pdflatex auxiliary files:

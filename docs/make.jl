@@ -7,7 +7,7 @@ makedocs(;
     modules=[MNN],
     authors="Alexander Reimer <alexander.reimer2357@gmail.com>, Matteo Friedrich <matteo.r.friedrich@gmail.com>",
     repo="https://github.com/Alexander-Reimer/Simulation-of-MNNs/blob/{commit}{path}#{line}",
-    sitename="MNN.jl",
+    sitename="Simulation of MNNs",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://Alexander-Reimer.github.io/Simulation-of-MNNs",

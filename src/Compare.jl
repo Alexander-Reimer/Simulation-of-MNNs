@@ -31,7 +31,7 @@ macro init_comp()
             CSV.write(io, df)
         end
         num_behaviours = 3
-        epochs = 300
+        epochs = 200
         sim_time = 1000
         rows = 5
         columns = 4
@@ -78,8 +78,8 @@ macro trainer(opt)
             $opt(net),
         )
         if $opt <: MNN.Evolution
-            t.optimization.mutation_strength = 0.005
-            t.optimization.popsize = 7
+            t.optimization.mutation_strength = 0.0005
+            t.optimization.popsize = 10
         end
     end
     return esc(ex)
@@ -130,7 +130,7 @@ typename(t) = typename(typeof(t))
 function num_behaviours(opt_type)
     name = "$(typename(opt_type))NumBehaviours"
     @init_comp
-    max_num_behaviours = 5
+    max_num_behaviours = 4
     @sync for num_behaviours in 1:max_num_behaviours, _ in 1:3
         Threads.@spawn begin
             @init_net()

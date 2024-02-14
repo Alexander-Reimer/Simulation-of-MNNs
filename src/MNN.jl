@@ -1,6 +1,16 @@
 module MNN
 
-export Network, simulate!, Trainer, train!, Visualizer, reset!, PPS, Evolution
+export Network,
+    simulate!,
+    Trainer,
+    train!,
+    Visualizer,
+    reset!,
+    PPS,
+    Evolution,
+    get_user_behaviour,
+    Diff,
+    Euler
 
 using AngleBetweenVectors
 using CairoMakie # visualization (pdf-capable backend)
@@ -14,16 +24,65 @@ using Random # UUIDs & setting rand seed
 using StaticArrays
 # CairoMakie.activate!()
 
+"""
+    struct Neuron
+
+Represents a node between springs. Position and velocity are stored in the [`MNN.Network`](@ref).
+
+# Fields
+
+- `movable::Bool`: Is the neuron movable (not fixed to wall)?
+"""
 struct Neuron
     movable::Bool
 end
 
+"""
+    struct Spring
+
+Represents an edge between neurons.
+
+# Fields
+- `spring_constant::Float64`: The spring constant.
+- `length::Float64`: The length of the spring at rest; this is constant and can't be changed
+  after creation of the object.
+"""
 mutable struct Spring
     spring_constant::Float64
     const length::Float64
 end
 spring_init() = rand() - 0.5
 
+"""
+    mutable struct Network
+
+Represents a MNN.
+
+# Fields
+
+- `graph::MetaGraphsNext.MetaGraph`: The graph representing the MNN (see MetaGraph.jl docs
+  for more details). The edges are of type [`MNN.Spring`](@ref), the node of type
+  [`MNN.Neuron`](@ref).
+- `rows::Int`: How many rows fixed columns have.
+- `row_counts::Array{Int,1}`: How many neurons are in each column. Access with column index
+  (e.g. `row_counts[1]` == 5 --> the first column has 5 rows).
+- `col_fixed::Array{Bool,1}`: Whether the top and bottom neuron of a column are fixed (not
+  movable). Access with column index like above, e.g. `network.col_fixed[1]` == true --> the
+  first column is fixed, so get_neuron(network, 1, 1).movable == false.
+- `columns::Int`: How many columns the MNN has.
+- `neuron_count::Int`: How many neurons the MNN has.
+- `xdist::Float64`: How far apart the columns are initially on the x axis.
+- `ydist::Float64`: How far apart the neurons of a column are initially on the y axis.
+- `start_positions::Dict{Int,Vector{Number}}`: The initial positions of the neurons,
+  accessed throught the neuron index. Example:
+  `network.start_positions[get_neuron_index(network, 1, 1)]` should always return [0, 0].
+- `positions::Array{Float64,2}`: The current positions of the neurons. First index
+  represents the space components, second one the neuron. So `network.positions[:, 1]` for
+  position of first neuron, `network.positions[2, 1]` for just the y component of the first
+  neuron.
+- `velocities::Array{Float64,2}`: The current velocities of the neurons. Same indexing as
+  `positions`.
+"""
 mutable struct Network
     graph::MetaGraphsNext.MetaGraph
     rows::Int # how many rows fixed columns have
@@ -450,6 +509,17 @@ include("PPSOptimizer.jl")
 include("Evolution.jl")
 include("Backpropagation.jl")
 
+
+"""
+    simulate!(
+    network::Network,
+    sim::Simulation,
+    behaviour::Behaviour;
+    vis::Union{Visualizer,Nothing}=nothing,
+)
+
+TBW
+"""
 function simulate!(
     network::Network,
     sim::Simulation,
@@ -460,6 +530,11 @@ function simulate!(
     return simulate!(network, sim; vis=vis)
 end
 
+"""
+    get_user_behaviour(network::Network)
+
+Get user input for behaviour.
+"""
 function get_user_behaviour(network::Network)
     reset!(network)
     vis = Visualizer(network)
@@ -483,7 +558,8 @@ function get_user_behaviour(network::Network)
         if event.button == Mouse.right && event.action == Mouse.press
             plt, n = pick(vis.fig)
             # if neuron in first column or neuron between (non inclusive) of first and last column
-            if !get_neuron(network, n).movable || network.row_counts[1] < n < get_neuron_index(network, network.columns, 1)
+            if !get_neuron(network, n).movable ||
+                network.row_counts[1] < n < get_neuron_index(network, network.columns, 1)
                 return nothing
             end
             is_clicked[] = true

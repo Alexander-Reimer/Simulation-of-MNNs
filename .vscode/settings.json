@@ -1,6 +1,9 @@
 {
     "julia.usePlotPane": false,
     "julia.additionalArgs": ["--threads=auto"],
+    "[markdown]": {
+        "editor.minimap.enabled": false
+    },
     "[julia]": {
         "editor.detectIndentation": false,
         "editor.insertSpaces": true,
