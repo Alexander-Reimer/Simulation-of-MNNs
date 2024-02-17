@@ -1,0 +1,15 @@
+[0] Config.pm:307> INFO - This is Biber 2.19
+[0] Config.pm:310> INFO - Logfile is 'main.blg'
+[46] biber:340> INFO - === Sa Feb 17, 2024, 12:59:03
+[59] Biber.pm:419> INFO - Reading 'main.bcf'
+[101] Biber.pm:979> INFO - Found 7 citekeys in bib section 0
+[110] Biber.pm:4419> INFO - Processing section 0
+[122] Biber.pm:4610> INFO - Looking for bibtex file 'quellen.bib' for section 0
+[123] bibtex.pm:1713> INFO - LaTeX decoding ...
+[131] bibtex.pm:1519> INFO - Found BibTeX data source 'quellen.bib'
+[181] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'variable = shifted' with 'variable = non-ignorable'
+[181] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[181] Biber.pm:4239> INFO - Sorting list 'nty/global//global/global' of type 'entry' with template 'nty' and locale 'de-DE'
+[181] Biber.pm:4245> INFO - No sort tailoring available for locale 'de-DE'
+[191] bbl.pm:660> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[193] bbl.pm:763> INFO - Output to main.bbl

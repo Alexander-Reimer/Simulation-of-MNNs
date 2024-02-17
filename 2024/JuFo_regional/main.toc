@@ -1,0 +1,16 @@
+\babel@toc {ngerman}{}\relax 
+\contentsline {section}{\numberline {1}Einleitung}{1}{section.1}%
+\contentsline {section}{\numberline {2}Hintergrund und theoretische Grundlagen}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Simulation von MNNs}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Optimierungsverfahren von MNNs}{5}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Genetische Algorithmen}{5}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Partial Pattern Search}{5}{subsubsection.2.2.2}%
+\contentsline {section}{\numberline {3}Vorgehensweise}{6}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Materialien}{6}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Methoden}{6}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Backpropagation}{8}{subsubsection.3.2.1}%
+\contentsline {section}{\numberline {4}Ergebnisse}{10}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Framework}{13}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Diskussion}{14}{section.5}%
+\contentsline {section}{\numberline {6}Quellen}{16}{section.6}%
+\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

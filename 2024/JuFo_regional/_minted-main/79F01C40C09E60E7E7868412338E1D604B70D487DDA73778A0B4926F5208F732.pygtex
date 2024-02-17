@@ -1,0 +1,23 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{MNN}
+\PYG{k}{mutable}\PYG{+w}{ }\PYG{k}{struct} \PYG{k+kt}{MySim}\PYG{+w}{ }\PYG{o}{\PYGZlt{}:}\PYG{+w}{ }\PYG{k+kt}{MNN}\PYG{o}{.}\PYG{n}{Simulation}
+\PYG{+w}{    }\PYG{n}{modifier}\PYG{o}{::}\PYG{k+kt}{Function}
+\PYG{+w}{    }\PYG{c}{\PYGZsh{} ...}
+\PYG{k}{end}
+\PYG{c}{\PYGZsh{} eigener Konstruktor; \PYGZdq{}modifier\PYGZdq{} wird später autom. von MNN.jl überschrieben}
+\PYG{n}{MySim}\PYG{p}{(}\PYG{o}{...}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{MySim}\PYG{p}{((}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{acc}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{n+nb}{nothing}\PYG{p}{),}\PYG{+w}{ }\PYG{o}{...}\PYG{p}{)}
+
+\PYG{k}{function}\PYG{+w}{ }\PYG{n}{MNN}\PYG{o}{.}\PYG{n}{simulate!}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{network}\PYG{o}{::}\PYG{k+kt}{Network}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{sim}\PYG{o}{::}\PYG{k+kt}{MySim}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{vis}\PYG{o}{::}\PYG{k+kt}{Union}\PYG{p}{\PYGZob{}}\PYG{k+kt}{Visualizer}\PYG{p}{,}\PYG{k+kt}{Nothing}\PYG{p}{\PYGZcb{}}\PYG{o}{=}\PYG{n+nb}{nothing}
+\PYG{p}{)}
+\PYG{+w}{    }\PYG{c}{\PYGZsh{} sim.modifier(net, acc), um Beschl.\PYGZhy{}vektor \PYGZdq{}acc\PYGZdq{} entspr. Kraftvektor anzupassen}
+\PYG{+w}{    }\PYG{c}{\PYGZsh{} MNN.update\PYGZus{}positions!(vis, network), um Visualisierung zu aktualisieren}
+\PYG{+w}{    }\PYG{c}{\PYGZsh{} ...}
+\PYG{k}{end}
+\PYG{c}{\PYGZsh{} nutze MNN.jl wie üblich (s. vorheriger Programmausschnitt)}
+\PYG{c}{\PYGZsh{} ...}
+\PYG{n}{t}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Trainer}\PYG{p}{(}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{PPS}\PYG{p}{(),}\PYG{+w}{ }\PYG{n}{MySim}\PYG{p}{(}\PYG{o}{...}\PYG{p}{))}
+\PYG{c}{\PYGZsh{} ...}
+\PYG{n}{simulate!}\PYG{p}{(}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{MySim}\PYG{p}{(}\PYG{o}{...}\PYG{p}{),}\PYG{+w}{ }\PYG{n}{t1}\PYG{o}{.}\PYG{n}{behaviours}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{],}\PYG{+w}{ }\PYG{n}{vis}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{vis}\PYG{p}{)}
+\PYG{c}{\PYGZsh{} ...}
+\end{Verbatim}

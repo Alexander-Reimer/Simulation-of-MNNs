@@ -1,0 +1,15 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{MNN}
+\PYG{n}{net}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Network}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{,}\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{+w}{ }\PYG{c}{\PYGZsh{} erstelle Netzwerk mit 5 Spalten und 4 Reihen}
+
+\PYG{n}{t1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Trainer}\PYG{p}{(}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{PPS}\PYG{p}{(),}\PYG{+w}{ }\PYG{n}{Diff}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{))}\PYG{+w}{ }\PYG{c}{\PYGZsh{} Training mit PPS und num. Simu. (100s Dauer)}
+\PYG{n}{t2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Trainer}\PYG{p}{(}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Evolution}\PYG{p}{(),}\PYG{+w}{ }\PYG{n}{Diff}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{))}\PYG{+w}{ }\PYG{c}{\PYGZsh{} evol. Verfahren statt PPS}
+\PYG{n}{t3}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Trainer}\PYG{p}{(}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Evolution}\PYG{p}{(),}\PYG{+w}{ }\PYG{n}{Euler}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{))}\PYG{+w}{ }\PYG{c}{\PYGZsh{} Euler\PYGZhy{}Simulation statt numerisch}
+
+\PYG{n}{train!}\PYG{p}{(}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{100}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{t1}\PYG{p}{)}\PYG{+w}{ }\PYG{c}{\PYGZsh{} Training mit t1 für 100 Epochen}
+\PYG{n}{reset!}\PYG{p}{(}\PYG{n}{net}\PYG{p}{)}\PYG{+w}{ }\PYG{c}{\PYGZsh{} Positionen der Neuronen zurücksetzen}
+\PYG{c}{\PYGZsh{} Netz + Verhaltensweise anzeigen; wird während Sim. autom. aktualisiert}
+\PYG{n}{vis}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Visualizer}\PYG{p}{(}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{behaviour}\PYG{o}{=}\PYG{n}{t1}\PYG{o}{.}\PYG{n}{behaviours}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{])}
+\PYG{c}{\PYGZsh{} 100s mit 1. Verhaltensweise simulieren}
+\PYG{n}{simulate!}\PYG{p}{(}\PYG{n}{net}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Diff}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{),}\PYG{+w}{ }\PYG{n}{t1}\PYG{o}{.}\PYG{n}{behaviours}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{],}\PYG{+w}{ }\PYG{n}{vis}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{vis}\PYG{p}{)}
+\end{Verbatim}

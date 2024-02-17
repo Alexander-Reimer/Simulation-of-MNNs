@@ -1,0 +1,309 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global}
+    \entry{brotcrunsher:backwardpass}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=361c4f614dd4f97810b485811a209a56}{%
+           family={Brotcrunsher},
+           familyi={B\bibinitperiod}}}%
+      }
+      \strng{namehash}{361c4f614dd4f97810b485811a209a56}
+      \strng{fullhash}{361c4f614dd4f97810b485811a209a56}
+      \strng{bibnamehash}{361c4f614dd4f97810b485811a209a56}
+      \strng{authorbibnamehash}{361c4f614dd4f97810b485811a209a56}
+      \strng{authornamehash}{361c4f614dd4f97810b485811a209a56}
+      \strng{authorfullhash}{361c4f614dd4f97810b485811a209a56}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{YouTube Video}
+      \field{title}{Neuronale Netze - Backpropagation - Backwardpass}
+      \field{urlday}{15}
+      \field{urlmonth}{1}
+      \field{urlyear}{2022}
+      \field{year}{2017}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.youtube.com/watch?v=EAtQCut6Qno
+      \endverb
+      \verb{url}
+      \verb https://www.youtube.com/watch?v=EAtQCut6Qno
+      \endverb
+      \keyw{YTVideos}
+    \endentry
+    \entry{Hopkins2023}{article}{}
+      \name{author}{3}{}{%
+        {{hash=62f03a5067a5b0d014c453f11ea7df23}{%
+           family={Hopkins},
+           familyi={H\bibinitperiod},
+           given={Jonathan\bibnamedelima B},
+           giveni={J\bibinitperiod\bibinitdelim B\bibinitperiod}}}%
+        {{hash=e96c491dd909ef71926b64a27aed94c9}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Ryan\bibnamedelima H},
+           giveni={R\bibinitperiod\bibinitdelim H\bibinitperiod}}}%
+        {{hash=49f3f58866837874a9d2ec128b44e2e1}{%
+           family={Sainaghi},
+           familyi={S\bibinitperiod},
+           given={Pietro},
+           giveni={P\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {IOP Publishing}%
+      }
+      \strng{namehash}{07b761c581087b5ca6eac3973a76647a}
+      \strng{fullhash}{07b761c581087b5ca6eac3973a76647a}
+      \strng{bibnamehash}{07b761c581087b5ca6eac3973a76647a}
+      \strng{authorbibnamehash}{07b761c581087b5ca6eac3973a76647a}
+      \strng{authornamehash}{07b761c581087b5ca6eac3973a76647a}
+      \strng{authorfullhash}{07b761c581087b5ca6eac3973a76647a}
+      \field{sortinit}{H}
+      \field{sortinithash}{23a3aa7c24e56cfa16945d55545109b5}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This work introduces the concept of applying binary-stiffness beams within a lattice to achieve a mechanical neural-network (MNN) metamaterial that learns its behaviors and properties with prolonged exposure to unanticipated ambient loading scenarios. Applying such beams to MNN metamaterials greatly increases their learning speed and simplifies the actuation demands, control circuitry, and optimization algorithms required by previously proposed concepts. A binary-stiffness beam design is proposed that uses principles of constraint manipulation and stiffness cancelation to achieve two switchable and discrete states of stiffness (i.e. binary stiffness) along its axis. The beam achieves a near-zero low-stiffness state and a large difference in stiffness between its high and low-stiffness states, which are both shown to be desirable attributes for learning mechanical behaviors. Simulations are conducted to characterize the effect of lattice size, the difference in stiffness between the constituent beam’s high and low-stiffness states, the magnitude of its low-stiffness state, and the number of simultaneously learned behaviors on MNN learning using binary-stiffness beams. Thus, this work provides a necessary step toward enabling practical artificial intelligent metamaterials.}
+      \field{journaltitle}{Smart Materials and Structures}
+      \field{month}{2}
+      \field{number}{3}
+      \field{title}{Using binary-stiffness beams within mechanical neural-network metamaterials to learn}
+      \field{volume}{32}
+      \field{year}{2023}
+      \field{pages}{035015}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.1088/1361-665X/acb519
+      \endverb
+      \verb{urlraw}
+      \verb https://dx.doi.org/10.1088/1361-665X/acb519
+      \endverb
+      \verb{url}
+      \verb https://dx.doi.org/10.1088/1361-665X/acb519
+      \endverb
+    \endentry
+    \entry{Lee2022}{article}{}
+      \name{author}{3}{}{%
+        {{hash=e96c491dd909ef71926b64a27aed94c9}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Ryan\bibnamedelima H.},
+           giveni={R\bibinitperiod\bibinitdelim H\bibinitperiod}}}%
+        {{hash=f003f94b7ad269a90e97af4127f942ec}{%
+           family={Mulder},
+           familyi={M\bibinitperiod},
+           given={Erwin\bibnamedelimb A.\bibnamedelimi B.},
+           giveni={E\bibinitperiod\bibinitdelim A\bibinitperiod\bibinitdelim B\bibinitperiod}}}%
+        {{hash=62f03a5067a5b0d014c453f11ea7df23}{%
+           family={Hopkins},
+           familyi={H\bibinitperiod},
+           given={Jonathan\bibnamedelima B.},
+           giveni={J\bibinitperiod\bibinitdelim B\bibinitperiod}}}%
+      }
+      \strng{namehash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{fullhash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{bibnamehash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{authorbibnamehash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{authornamehash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{authorfullhash}{e6f037a64efb07aa81ee280ce961fe02}
+      \field{extraname}{1}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Aside from some living tissues, few materials can autonomously learn to exhibit desired behaviors as a consequence of prolonged exposure to unanticipated ambient loading scenarios. Still fewer materials can continue to exhibit previously learned behaviors in the midst of changing conditions (e.g., rising levels of internal damage, varying fixturing scenarios, and fluctuating external loads) while also acquiring new behaviors best suited for the situation at hand. Here, we describe a class of architected materials, called mechanical neural networks (MNNs), that achieve such learning capabilities by tuning the stiffness of their constituent beams similar to how artificial neural networks (ANNs) tune their weights. An example lattice was fabricated to demonstrate its ability to learn multiple mechanical behaviors simultaneously, and a study was conducted to determine the effect of lattice size, packing configuration, algorithm type, behavior number, and linear-versus-nonlinear stiffness tunability on MNN learning as proposed. Thus, this work lays the foundation for artificial-intelligent (AI) materials that can learn behaviors and properties. This work studies how a lattice of tunable beams can learn desired behaviors and what factors affect mechanical learning.}
+      \field{journaltitle}{Science Robotics}
+      \field{number}{71}
+      \field{title}{Mechanical neural networks: Architected materials that learn behaviors}
+      \field{urlday}{28}
+      \field{urlmonth}{11}
+      \field{urlyear}{2023}
+      \field{volume}{7}
+      \field{year}{2022}
+      \field{urldateera}{ce}
+      \field{pages}{eabq7278}
+      \range{pages}{-1}
+      \verb{doi}
+      \verb 10.1126/scirobotics.abq7278
+      \endverb
+      \verb{eprint}
+      \verb https://www.science.org/doi/pdf/10.1126/scirobotics.abq7278
+      \endverb
+      \verb{urlraw}
+      \verb https://www.science.org/doi/abs/10.1126/scirobotics.abq7278
+      \endverb
+      \verb{url}
+      \verb https://www.science.org/doi/abs/10.1126/scirobotics.abq7278
+      \endverb
+    \endentry
+    \entry{Lee2022Sup}{article}{}
+      \name{author}{3}{}{%
+        {{hash=e96c491dd909ef71926b64a27aed94c9}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Ryan\bibnamedelima H.},
+           giveni={R\bibinitperiod\bibinitdelim H\bibinitperiod}}}%
+        {{hash=f003f94b7ad269a90e97af4127f942ec}{%
+           family={Mulder},
+           familyi={M\bibinitperiod},
+           given={Erwin\bibnamedelimb A.\bibnamedelimi B.},
+           giveni={E\bibinitperiod\bibinitdelim A\bibinitperiod\bibinitdelim B\bibinitperiod}}}%
+        {{hash=62f03a5067a5b0d014c453f11ea7df23}{%
+           family={Hopkins},
+           familyi={H\bibinitperiod},
+           given={Jonathan\bibnamedelima B.},
+           giveni={J\bibinitperiod\bibinitdelim B\bibinitperiod}}}%
+      }
+      \strng{namehash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{fullhash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{bibnamehash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{authorbibnamehash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{authornamehash}{e6f037a64efb07aa81ee280ce961fe02}
+      \strng{authorfullhash}{e6f037a64efb07aa81ee280ce961fe02}
+      \field{extraname}{2}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Aside from some living tissues, few materials can autonomously learn to exhibit desired behaviors as a consequence of prolonged exposure to unanticipated ambient loading scenarios. Still fewer materials can continue to exhibit previously learned behaviors in the midst of changing conditions (e.g., rising levels of internal damage, varying fixturing scenarios, and fluctuating external loads) while also acquiring new behaviors best suited for the situation at hand. Here, we describe a class of architected materials, called mechanical neural networks (MNNs), that achieve such learning capabilities by tuning the stiffness of their constituent beams similar to how artificial neural networks (ANNs) tune their weights. An example lattice was fabricated to demonstrate its ability to learn multiple mechanical behaviors simultaneously, and a study was conducted to determine the effect of lattice size, packing configuration, algorithm type, behavior number, and linear-versus-nonlinear stiffness tunability on MNN learning as proposed. Thus, this work lays the foundation for artificial-intelligent (AI) materials that can learn behaviors and properties. This work studies how a lattice of tunable beams can learn desired behaviors and what factors affect mechanical learning.}
+      \field{journaltitle}{Science Robotics}
+      \field{number}{71}
+      \field{title}{Mechanical neural networks: Architected materials that learn behaviors}
+      \field{titleaddon}{Supplementary Materials}
+      \field{urlday}{28}
+      \field{urlmonth}{11}
+      \field{urlyear}{2023}
+      \field{volume}{7}
+      \field{year}{2022}
+      \field{urldateera}{ce}
+      \field{pages}{eabq7278}
+      \range{pages}{-1}
+      \verb{doi}
+      \verb 10.1126/scirobotics.abq7278
+      \endverb
+      \verb{eprint}
+      \verb https://www.science.org/doi/pdf/10.1126/scirobotics.abq7278
+      \endverb
+      \verb{urlraw}
+      \verb https://www.science.org/doi/suppl/10.1126/scirobotics.abq7278/suppl_file/scirobotics.abq7278_sm.pdf
+      \endverb
+      \verb{url}
+      \verb https://www.science.org/doi/suppl/10.1126/scirobotics.abq7278/suppl_file/scirobotics.abq7278_sm.pdf
+      \endverb
+    \endentry
+    \entry{RepoMNN}{misc}{}
+      \name{author}{2}{}{%
+        {{hash=c21ffec9c993b9caea21dc1943f3a5b4}{%
+           family={Reimer},
+           familyi={R\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+        {{hash=823b8db4ab7986be29e6e5d807166321}{%
+           family={Friedrich},
+           familyi={F\bibinitperiod},
+           given={Matteo},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{50bfe994fba5dfdc0b2d9271997c8d23}
+      \strng{fullhash}{50bfe994fba5dfdc0b2d9271997c8d23}
+      \strng{bibnamehash}{50bfe994fba5dfdc0b2d9271997c8d23}
+      \strng{authorbibnamehash}{50bfe994fba5dfdc0b2d9271997c8d23}
+      \strng{authornamehash}{50bfe994fba5dfdc0b2d9271997c8d23}
+      \strng{authorfullhash}{50bfe994fba5dfdc0b2d9271997c8d23}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{GitHub Repository}
+      \field{title}{Simulation of MNNs}
+      \field{urlday}{27}
+      \field{urlmonth}{11}
+      \field{urlyear}{2023}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://github.com/Alexander-Reimer/Simulation-of-MNNs
+      \endverb
+      \verb{url}
+      \verb https://github.com/Alexander-Reimer/Simulation-of-MNNs
+      \endverb
+    \endentry
+    \entry{gentisch}{article}{}
+      \name{author}{1}{}{%
+        {{hash=481e1a4b89cbe457bf993b34a14e83a1}{%
+           family={Schröter},
+           familyi={S\bibinitperiod},
+           given={Benedikt},
+           giveni={B\bibinitperiod}}}%
+      }
+      \strng{namehash}{481e1a4b89cbe457bf993b34a14e83a1}
+      \strng{fullhash}{481e1a4b89cbe457bf993b34a14e83a1}
+      \strng{bibnamehash}{481e1a4b89cbe457bf993b34a14e83a1}
+      \strng{authorbibnamehash}{481e1a4b89cbe457bf993b34a14e83a1}
+      \strng{authornamehash}{481e1a4b89cbe457bf993b34a14e83a1}
+      \strng{authorfullhash}{481e1a4b89cbe457bf993b34a14e83a1}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{month}{03}
+      \field{title}{Genetische Algorithmen - Optimierung nach dem Ansatz der natürlichen Selektion}
+      \field{year}{2020}
+      \verb{urlraw}
+      \verb https://www.cologne-intelligence.de/blog/genetische-algorithmen
+      \endverb
+      \verb{url}
+      \verb https://www.cologne-intelligence.de/blog/genetische-algorithmen
+      \endverb
+    \endentry
+    \entry{wiki:hooke}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=9c677286866aad38f8e9b660f5411814}{%
+           family={Wikipedia},
+           familyi={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{9c677286866aad38f8e9b660f5411814}
+      \strng{fullhash}{9c677286866aad38f8e9b660f5411814}
+      \strng{bibnamehash}{9c677286866aad38f8e9b660f5411814}
+      \strng{authorbibnamehash}{9c677286866aad38f8e9b660f5411814}
+      \strng{authornamehash}{9c677286866aad38f8e9b660f5411814}
+      \strng{authorfullhash}{9c677286866aad38f8e9b660f5411814}
+      \field{sortinit}{W}
+      \field{sortinithash}{4315d78024d0cea9b57a0c6f0e35ed0d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Hookesches Gesetz --- Wikipedia{,} die freie Enzyklopädie}
+      \field{urlday}{6}
+      \field{urlmonth}{1}
+      \field{urlyear}{2024}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb \url{https://de.wikipedia.org/w/index.php?title=Hookesches_Gesetz&oldid=238038175}
+      \endverb
+      \verb{url}
+      \verb %5Curl%7Bhttps://de.wikipedia.org/w/index.php?title=Hookesches_Gesetz&oldid=238038175%7D
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
