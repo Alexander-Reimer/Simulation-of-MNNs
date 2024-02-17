@@ -31,7 +31,7 @@ macro init_comp()
         open(filepath; write=true, create=true) do io
             CSV.write(io, df)
         end
-        num_behaviours = 3
+        num_behaviours = 1
         epochs = 200
         sim_time = 1000
         rows = 5
@@ -40,7 +40,6 @@ macro init_comp()
         mag_modifier = 0.1
     end
     return esc(ex)
-    # esc(Meta.parse(prog))
 end
 
 macro init_net()
@@ -212,6 +211,26 @@ function num_rows_columns(opt_type)
             @init_net
             @trainer(opt_type)
             @train!
+        end
+    end
+end
+
+function mag_modifier_goal(opt_type)
+    name = "$(typename(opt_type))MagModifierGoal"
+    @init_comp
+    for i in 1:6
+        mag_goals = 0.05 * 2^(i - 1)
+        @sync for j in 1:6
+            mag_modifier = 0.05 * 2^(j - 1)
+            for _ in 1:5
+                Threads.@spawn begin
+                    local mag_goals = $mag_goals
+                    local mag_modifier = $ mag_modifier
+                    @init_net
+                    @trainer(opt_type)
+                    @train!
+                end
+            end
         end
     end
 end
