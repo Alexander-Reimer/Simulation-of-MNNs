@@ -5,6 +5,9 @@
 [![Coverage](https://codecov.io/gh/alexander-reimer/Simulation-of-MNNs/branch/main/graph/badge.svg)](https://codecov.io/gh/alexander-reimer/Simulation-of-MNNs)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
+The German papers describing this project can be found in the [paper
+branch](https://github.com/Alexander-Reimer/Simulation-of-MNNs/tree/paper).
+
 ## Summary (German)
 
 Wir wollen uns mit dem neuen, vergleichsweise wenig erforschtem Bereich der
