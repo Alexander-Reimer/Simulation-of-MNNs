@@ -26,7 +26,8 @@ macro init_comp()
     ex = quote
         global df = create_df()
         global lk = ReentrantLock()
-        filepath = "src/data/" * name * "_" * string(now()) * ".csv"
+        timestamp = Dates.format(now(), "yyyy-mm-ddTHH-MM-SS")
+        filepath = "src/data/" * name * "_" * timestamp * ".csv"
         open(filepath; write=true, create=true) do io
             CSV.write(io, df)
         end
