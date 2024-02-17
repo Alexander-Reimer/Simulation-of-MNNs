@@ -39,7 +39,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
     throttle(1 / max_fps, neuron_ys)
     edge_pairs = collect(keys(network.graph.edge_data))
 
-    fig = Figure(; scene=MNN.Scene(; camera=MNN.campixel!))
+    fig = Figure()
     ax = Axis(
         fig[1, 1];
         aspect=DataAspect(),
