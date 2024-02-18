@@ -509,16 +509,15 @@ include("PPSOptimizer.jl")
 include("Evolution.jl")
 include("Backpropagation.jl")
 
-
 """
-    simulate!(
-    network::Network,
-    sim::Simulation,
-    behaviour::Behaviour;
-    vis::Union{Visualizer,Nothing}=nothing,
-)
+    simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
 
-TBW
+Simulate network with given behaviour. Simulation method is determined by type of `sim`;
+currently [`MNN.Diff`](@ref) and [`MNN.Euler`](@ref) are implemented.
+
+To implement your own, you need to define a struct that is a subtype of
+[`MNN.Simulation`](@ref) and has the field `modifier::Function`. Then overload the function
+`MNN.simulate!(network::Network, sim::YourType; vis::Union{Visualizer, Nothing} = nothing)`.
 """
 function simulate!(
     network::Network,
@@ -530,20 +529,41 @@ function simulate!(
     return simulate!(network, sim; vis=vis)
 end
 
+function nearest_neuron(x, y, net::Network)
+    min_dist = Inf
+    min_i = -1
+    for col in [1, net.columns]
+        for row in 1:net.row_counts[col]
+            i = get_neuron_index(net, col, row)
+            dist = (x - net.positions[1, i])^2 + (y - net.positions[2, i])^2
+            if dist < min_dist
+                min_dist = dist
+                min_i = i
+            end
+        end
+    end
+    return min_i
+end
+
 """
     get_user_behaviour(network::Network)
 
-Get user input for behaviour.
+Get deformation behaviour using GUI. Left click on a neuron (first or last column) to select
+it, then release left mouse button and move mouse pointer to move the other end of the goal
+/ force vector. Click left mouse button again to confirm.
+
+If you have set all force and goal vectors you want, press space to finish. The function will
+then return a [`MNN.Behaviour`](@ref) object.
 """
 function get_user_behaviour(network::Network)
     reset!(network)
     vis = Visualizer(network)
+    deregister_interaction!(vis.ax, :rectanglezoom)
     scene = vis.fig.scene
     # https://github.com/MakieOrg/Makie.jl/issues/653#issuecomment-660009208
     glfw_window = GLMakie.to_native(display(vis.fig))
 
-    # MODIFIERS
-    n = Observable(0)
+    n = -1
 
     vec_points = Array{Observable{Point2f},1}(undef, network.neuron_count)
     for i in eachindex(vec_points)
@@ -555,57 +575,58 @@ function get_user_behaviour(network::Network)
     is_clicked = Observable(false)
 
     on(events(scene).mousebutton) do event
-        if event.button == Mouse.right && event.action == Mouse.press
-            plt, n = pick(vis.fig)
-            # if neuron in first column or neuron between (non inclusive) of first and last column
-            if !get_neuron(network, n).movable ||
-                network.row_counts[1] < n < get_neuron_index(network, network.columns, 1)
-                return nothing
-            end
-            is_clicked[] = true
-            if (n ∈ already_created)
-                return nothing
-            end
-            push!(already_created, n)
-            n_pos = network.positions[:, n]
-            vec_points[n][] = mouseposition(vis.ax)
-            vec_point = vec_points[n]
-            is_modifier = n <= network.row_counts[1]
-
-            if (is_modifier)
-                dx1 = lift(a -> [n_pos[1] - a[1]], vec_point)
-                dy1 = lift(a -> [n_pos[2] - a[2]], vec_point)
-                start = lift(dx1, dy1) do dx, dy
-                    return n_pos - normalize([dx[1], dy[1]]) * 0.12
-                end
-            else
-                dx1 = lift(a -> [a[1] - n_pos[1]], vec_point)
-                dy1 = lift(a -> [a[2] - n_pos[2]], vec_point)
-                start = lift(dx1, dy1) do dx, dy
-                    return n_pos
-                end
-            end
-            start_x = lift(a -> [a[1]], start)
-            start_y = lift(a -> [a[2]], start)
-
-            if (is_modifier)
-                arrows!(start_x, start_y, dx1, dy1; color=:blue, align=:tailend)
-            else
-                arrows!(start_x, start_y, dx1, dy1; color=:red)
-            end
-        end
-    end
-
-    on(events(scene).mousebutton) do event
         if event.button == Mouse.left && event.action == Mouse.press
             is_clicked[] = !is_clicked[]
+            if is_clicked[]
+                n = nearest_neuron(mouseposition(vis.ax)..., network)
+                if n <= 0
+                    return nothing
+                end
+                # if neuron not movable or neuron between (non inclusive) of first and last column
+                if !get_neuron(network, n[]).movable ||
+                    network.row_counts[1] < n < get_neuron_index(network, network.columns, 1)
+                    return nothing
+                end
+                if (n ∈ already_created)
+                    return nothing
+                end
+                push!(already_created, n)
+                n_pos = network.positions[:, n]
+                vec_points[n][] = mouseposition(vis.ax)
+                vec_point = vec_points[n]
+                is_modifier = n <= network.row_counts[1]
+
+                if (is_modifier)
+                    dx1 = lift(a -> [n_pos[1] - a[1]], vec_point)
+                    dy1 = lift(a -> [n_pos[2] - a[2]], vec_point)
+                    start = lift(dx1, dy1) do dx, dy
+                        return n_pos - normalize([dx[1], dy[1]]) * 0.12
+                    end
+                else
+                    dx1 = lift(a -> [a[1] - n_pos[1]], vec_point)
+                    dy1 = lift(a -> [a[2] - n_pos[2]], vec_point)
+                    start = lift(dx1, dy1) do dx, dy
+                        return n_pos
+                    end
+                end
+                start_x = lift(a -> [a[1]], start)
+                start_y = lift(a -> [a[2]], start)
+
+                if (is_modifier)
+                    arrows!(start_x, start_y, dx1, dy1; color=:blue, align=:tailend)
+                else
+                    arrows!(start_x, start_y, dx1, dy1; color=:red)
+                end
+            end
         end
     end
 
     on(events(scene).mouseposition) do event
         if is_clicked[]
-            vec_points[n][] = mouseposition(vis.ax)
-            notify(vec_points[n])
+            if n > 0
+                vec_points[n][] = mouseposition(vis.ax)
+                notify(vec_points[n])
+            end
         end
     end
 
