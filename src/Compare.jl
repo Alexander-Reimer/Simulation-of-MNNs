@@ -18,6 +18,8 @@ function create_df()
         mag_modifier=Float64[],
         sim_type=String[],
         sim_time=Float64[],
+        mutation_strength=Int64[],
+        popsize=Int64[],
         loss=Float64[],
     )
 end
@@ -36,7 +38,7 @@ macro init_comp()
         sim_time = 1000
         rows = 5
         columns = 4
-        mag_goals = 1
+        mag_goals = 0.1
         mag_modifier = 0.1
     end
     return esc(ex)
@@ -55,9 +57,10 @@ macro init_net()
 end
 
 function save_df(filepath, df)
-    open(filepath; write=true) do io
-        CSV.write(io, df)
+    open(filepath; append=true, truncate=false) do io
+        CSV.write(io, df, append=true)
     end
+    empty!(df)
 end
 
 macro save(x)
@@ -88,23 +91,47 @@ end
 macro makeentry()
     ex = quote
         lock(lk)
-        push!(
-            df,
-            (
-                now(),
-                id.value,
-                epochs,
-                rows,
-                columns,
-                num_behaviours,
-                min_angle,
-                mag_goals,
-                mag_modifier,
-                typename(t.simulation),
-                t.simulation.time,
-                MNN.calc_loss(net, t.simulation, t.behaviours),
-            ),
-        )
+        if t.optimization isa MNN.Evolution
+            push!(
+                df,
+                (
+                    now(),
+                    id.value,
+                    epochs,
+                    rows,
+                    columns,
+                    num_behaviours,
+                    min_angle,
+                    mag_goals,
+                    mag_modifier,
+                    typename(t.simulation),
+                    t.simulation.time,
+                    round(Int64, t.optimization.mutation_strength * 1000000),
+                    t.optimization.popsize,
+                    MNN.calc_loss(net, t.simulation, t.behaviours) * 1000,
+                ),
+            )
+        else
+            push!(
+                df,
+                (
+                    now(),
+                    id.value,
+                    epochs,
+                    rows,
+                    columns,
+                    num_behaviours,
+                    min_angle,
+                    mag_goals,
+                    mag_modifier,
+                    typename(t.simulation),
+                    t.simulation.time,
+                    missing,
+                    missing,
+                    MNN.calc_loss(net, t.simulation, t.behaviours),
+                ),
+            )
+        end
         save_df(filepath, df)
         unlock(lk)
     end
@@ -239,10 +266,12 @@ function mag_modifier_goal(opt_type)
     end
 end
 
-function mutation_strength(opt_type::T) where {T<:MNN.Evolution}
+function mutation_strength(opt_type)
     name = "$(typename(opt_type))MutationStrength"
     @init_comp
-    @sync for strength in 0.0001:0.0001:0.001, _ in 1:5
+    strength = 0.0001
+    @sync for i in 1:10, _ in 1:2
+        strength = 0.0001 * i
         Threads.@spawn begin
             @init_net
             @trainer(opt_type)
