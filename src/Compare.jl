@@ -218,16 +218,18 @@ end
 function mag_modifier_goal(opt_type)
     name = "$(typename(opt_type))MagModifierGoal"
     @init_comp
-    for i in 1:6
-        mag_goals = (0.05 * 2^(6 - 1)) - 0.05 * 2^(i - 1)
-        # mag_goals = 0.05 * 2^(i - 1)
-        @sync for j in 1:6
-            # mag_modifier = (0.05 * 2^(6 - 1)) - 0.05 * 2^(j - 1)
-            mag_modifier = 0.05 * 2^(j - 1)
-            for _ in 1:5
+    for _ in 1:2
+        for i in 1:20
+            # mag_goals = (0.05 * 2^(6 - 1)) - 0.05 * 2^(i - 1)
+            # mag_goals = 0.05 * 2^(i - 1)
+            mag_goals = 0.1 * i
+            @sync for j in 1:20
+                # mag_modifier = (0.05 * 2^(6 - 1)) - 0.05 * 2^(j - 1)
+                # mag_modifier = 0.05 * 2^(j - 1)
+                mag_modifier = 0.1 * j
                 Threads.@spawn begin
                     local mag_goals = $mag_goals
-                    local mag_modifier = $ mag_modifier
+                    local mag_modifier = $mag_modifier
                     @init_net
                     @trainer(opt_type)
                     @train!
