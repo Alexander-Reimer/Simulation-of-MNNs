@@ -219,8 +219,10 @@ function mag_modifier_goal(opt_type)
     name = "$(typename(opt_type))MagModifierGoal"
     @init_comp
     for i in 1:6
-        mag_goals = 0.05 * 2^(i - 1)
+        mag_goals = (0.05 * 2^(6 - 1)) - 0.05 * 2^(i - 1)
+        # mag_goals = 0.05 * 2^(i - 1)
         @sync for j in 1:6
+            # mag_modifier = (0.05 * 2^(6 - 1)) - 0.05 * 2^(j - 1)
             mag_modifier = 0.05 * 2^(j - 1)
             for _ in 1:5
                 Threads.@spawn begin
