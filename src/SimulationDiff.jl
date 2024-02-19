@@ -37,7 +37,7 @@ function simulation_step(accelerations, velocities, positions, p, t)
         end
     end
 
-    return modifier(network, accelerations)
+    return modifier(network, accelerations, t)
 end
 
 function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=nothing)
@@ -61,7 +61,6 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
         end
         mean_pos_change = sum(abs, integ.u.x[2] .- integ.uprev.x[2]) / length(integ.u.x[2])
         mean_velocity = sum(abs, integ.u.x[1]) / length(integ.u.x[1])
-        @info bar
         if integ.t > 5 && mean_pos_change < 1.5e-5 && mean_velocity < 1.5e-5
             @info "Early break at: $(integ.t)"
             break

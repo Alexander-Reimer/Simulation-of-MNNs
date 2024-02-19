@@ -22,6 +22,7 @@ using MetaGraphsNext
 using Observables # updating visualization
 using Random # UUIDs & setting rand seed
 using StaticArrays
+using Statistics # mean
 # CairoMakie.activate!()
 
 """
@@ -99,13 +100,10 @@ end
 
 include("Visualize.jl")
 
-mutable struct Behaviour
-    goals::Dict{Int,Vector{Number}}
-    relative::Bool
-    modifiers::Dict{Int,Vector{Number}}
-end
+abstract type Behaviour end
 
 abstract type Optimization end
+
 abstract type Simulation end
 
 mutable struct Trainer
@@ -307,17 +305,6 @@ function get_spring(network, n1, n2; label::Bool=true)
     return network.graph.edge_data[tn1, tn2]
 end
 
-function addvelocity!(network::Network, acc::Matrix, modifiers)
-    #TODO: what about unmovables?
-    for row in 1:network.row_counts[1]
-        neuron_i = get_neuron_index(network, 1, row)
-        if haskey(modifiers, neuron_i)
-            #TODO: check indexing
-            acc[:, row] += modifiers[neuron_i]
-        end
-    end
-end
-
 netpush!(network, acc) = addvelocity!(network, acc, [0.1, 0])
 netpull!(network, acc) = addvelocity!(network, acc, [-0.1, 0])
 
@@ -373,19 +360,6 @@ function get_spring_constants_vec(network::Network)
     end
 
     return spring_constants
-end
-
-function calc_loss(network::Network, sim::Simulation, behaviours::Vector{Behaviour})
-    l = 0
-    for b in behaviours
-        reset!(network)
-        simulate!(network, sim, b)
-        l += loss(network, b)
-    end
-    if isnan(l)
-        @info "l: $l, length: $(length(behaviours))"
-    end
-    return l / length(behaviours)
 end
 
 function calc_losses!(
@@ -508,6 +482,8 @@ include("SimulationEuler.jl")
 include("PPSOptimizer.jl")
 include("Evolution.jl")
 include("Backpropagation.jl")
+include("Resonance.jl")
+include("Deformation.jl")
 
 """
     simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
@@ -525,6 +501,7 @@ function simulate!(
     behaviour::Behaviour;
     vis::Union{Visualizer,Nothing}=nothing,
 )
+    @info "abc1"
     sim.modifier = (network, acc) -> addvelocity!(network, acc, behaviour.modifiers)
     return simulate!(network, sim; vis=vis)
 end
@@ -657,7 +634,7 @@ function get_user_behaviour(network::Network)
         end
     end
 
-    return Behaviour(goals, true, modifiers)
+    return Deformation(goals, true, modifiers)
 end
 
 end
