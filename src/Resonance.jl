@@ -1,5 +1,5 @@
 mutable struct Resonance <: Behaviour
-    goals::Dict{Int,Vector{Number}}
+    goals::Dict{Int,Number}
     modifiers::Dict{Int,Vector{Number}}
 end
 
@@ -10,12 +10,27 @@ function resonate!(network::Network, acc, modifiers, t)
     end
 end
 
-function calc_loss(network::Network, sim::Simulation, behaviours::Vector{Resonance})
+#TODO: implement for Euler
+function calc_loss(network::Network, sim::Diff, behaviours::Vector{Resonance})
     l = 0
     for b in behaviours
         reset!(network)
-        simulate!(network, sim, b)
-        l += loss(network, b)
+        integ = simulate!(network, sim, b)
+        foo = round(Int, integ.t / 5)
+        b_l = 0.0
+        for (n, target_a) in b.goals # neuron and target amplitude
+            max_x = maximum(integ.sol.u[end-foo:end]) do curr_solution
+                positions = curr_solution.x[2]
+                return positions[1, n] # only x component
+            end
+            min_x = minimum(integ.sol.u[(end - foo + 1):end]) do curr_solution
+                positions = curr_solution.x[2]
+                return positions[1, n] # only x component
+            end
+            actual_a = (max_x - min_x) / 2 # actual amplitude
+            b_l += (target_a - actual_a)^2
+        end
+        l += b_l / length(b.goals)
     end
     if isnan(l)
         @info "l: $l, length: $(length(behaviours))"
