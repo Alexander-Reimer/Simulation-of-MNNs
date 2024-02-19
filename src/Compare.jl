@@ -106,9 +106,10 @@ macro makeentry()
                     mag_modifier,
                     typename(t.simulation),
                     t.simulation.time,
-                    round(Int64, t.optimization.mutation_strength * 1000000),
+                    # round(Int64, t.optimization.mutation_strength * 1000000),
+                    missing, #TODO: saving mutation strength
                     t.optimization.popsize,
-                    MNN.calc_loss(net, t.simulation, t.behaviours) * 1000,
+                    MNN.calc_loss(net, t.simulation, t.behaviours),
                 ),
             )
         else
@@ -271,7 +272,7 @@ function mutation_strength(opt_type)
     @init_comp
     strength = 0.0001
     @sync for i in 1:10, _ in 1:2
-        strength = 0.0001 * i
+        strength =  0.0001* i
         Threads.@spawn begin
             @init_net
             @trainer(opt_type)
