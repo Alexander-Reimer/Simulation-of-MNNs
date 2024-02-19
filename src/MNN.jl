@@ -107,7 +107,7 @@ abstract type Optimization end
 abstract type Simulation end
 
 mutable struct Trainer
-    behaviours::Vector{Behaviour}
+    behaviours::Vector{T} where T <: Behaviour
     simulation::Simulation
     optimization::Optimization
 end

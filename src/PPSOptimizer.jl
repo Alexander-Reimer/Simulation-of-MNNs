@@ -35,8 +35,8 @@ function pps_init!(network::Network, opt::PPS)
 end
 
 function train!(
-    network::Network, epochs::Int, behaviours::Vector{Behaviour}, sim::Simulation, opt::PPS
-)
+    network::Network, epochs::Int, behaviours::Vector{T}, sim::Simulation, opt::PPS
+) where {T<:Behaviour}
     if !opt.initialized
         pps_init!(network, opt)
         opt.initialized = true

@@ -44,7 +44,6 @@ function simulate!(
     behaviour::Resonance;
     vis::Union{Visualizer,Nothing}=nothing,
 )
-    @info "here"
     sim.modifier = (network, acc, t) -> resonate!(network, acc, behaviour.modifiers, t)
     return simulate!(network, sim; vis=vis)
 end
