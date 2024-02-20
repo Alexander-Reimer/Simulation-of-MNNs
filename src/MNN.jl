@@ -445,7 +445,7 @@ function random_distanced_vector(others, m, min_angle)
 end
 
 function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=1, m_mod=0.1)
-    behaviours = Vector{Behaviour}(undef, num)
+    behaviours = Vector{Deformation}(undef, num)
     goals = Array{Float64,3}(undef, 2, num, network.row_counts[end])
     modifiers = Array{Float64,3}(undef, 2, num, network.row_counts[1])
     for i in eachindex(behaviours)
@@ -468,7 +468,7 @@ function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=
             b_modifiers[neuron_i] = modifiers[:, i, row]
         end
         # behaviours[i] = behaviour_unmoving(network)
-        behaviours[i] = Behaviour(b_goals, true, b_modifiers)
+        behaviours[i] = Deformation(b_goals, true, b_modifiers)
     end
     return behaviours
 end

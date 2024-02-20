@@ -105,12 +105,8 @@ function single_point_crossover(can1, can2)
 end
 
 function train!(
-    network::Network,
-    epochs::Int,
-    behaviours::Vector{Behaviour},
-    sim::Simulation,
-    opt::Evolution,
-)
+    network::Network, epochs::Int, behaviours::Vector{T}, sim::Simulation, opt::Evolution
+) where {T<:Behaviour}
     loss = calc_loss(network, sim, behaviours)
     spring_data = get_spring_constants_vec(network)
 

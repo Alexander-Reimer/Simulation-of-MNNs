@@ -62,7 +62,7 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
         mean_pos_change = sum(abs, integ.u.x[2] .- integ.uprev.x[2]) / length(integ.u.x[2])
         mean_velocity = sum(abs, integ.u.x[1]) / length(integ.u.x[1])
         if integ.t > 5 && mean_pos_change < 1.5e-5 && mean_velocity < 1.5e-5
-            @info "Early break at: $(integ.t)"
+            # @info "Early break at: $(integ.t)"
             break
         end
     end
