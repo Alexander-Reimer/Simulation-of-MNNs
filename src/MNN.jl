@@ -22,6 +22,7 @@ using MetaGraphsNext
 using Observables # updating visualization
 using Random # UUIDs & setting rand seed
 using StaticArrays
+using Statistics
 # CairoMakie.activate!()
 
 """
@@ -100,9 +101,9 @@ end
 include("Visualize.jl")
 
 mutable struct Behaviour
-    goals::Dict{Int,Vector{Number}}
-    relative::Bool
-    modifiers::Dict{Int,Vector{Number}}
+    goals::Float64
+
+    modifiers::Float64
 end
 
 abstract type Optimization end
@@ -318,6 +319,12 @@ function addvelocity!(network::Network, acc::Matrix, modifiers)
     end
 end
 
+function resonate!(network, acc, frequency, t)
+    for row in 1:network.row_counts[1]
+        acc[:, row] += [sin(t*frequency/(2pi))/10,0]
+    end
+end
+
 netpush!(network, acc) = addvelocity!(network, acc, [0.1, 0])
 netpull!(network, acc) = addvelocity!(network, acc, [-0.1, 0])
 
@@ -375,12 +382,13 @@ function get_spring_constants_vec(network::Network)
     return spring_constants
 end
 
-function calc_loss(network::Network, sim::Simulation, behaviours::Vector{Behaviour})
+function calc_loss(n::Network,sim::Simulation,behaviours::Vector{Behaviour})
     l = 0
     for b in behaviours
-        reset!(network)
-        simulate!(network, sim, b)
-        l += loss(network, b)
+        reset!(n)
+        r = simulate!(n, sim, b)
+        posx = [r[get_neuron_index(n, n.columns, i)*2-1 ,500:1000] for i = 1:n.row_counts[n.columns]]
+        l += (mean([maximum(p)-minimum(p) for p in posx])-b.goals)^2
     end
     if isnan(l)
         @info "l: $l, length: $(length(behaviours))"
@@ -470,37 +478,16 @@ function random_distanced_vector(others, m, min_angle)
     return result
 end
 
-function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=1, m_mod=0.1)
+function create_behaviours(num::Int)
     behaviours = Vector{Behaviour}(undef, num)
-    goals = Array{Float64,3}(undef, 2, num, network.row_counts[end])
-    modifiers = Array{Float64,3}(undef, 2, num, network.row_counts[1])
     for i in eachindex(behaviours)
-        b_goals = Dict()
-        b_modifiers = Dict()
-        for row in 1:network.row_counts[end]
-            neuron_i = get_neuron_index(network, network.columns, row)
-            neuron = get_neuron(network, neuron_i)
-            !neuron.movable && continue
-            others = goals[:, 1:(i - 1), row]
-            goals[:, i, row] .= random_distanced_vector(others, m_goal, min_angle)
-            b_goals[neuron_i] = goals[:, i, row]
-        end
-        for row in shuffle(1:network.row_counts[1])
-            neuron_i = get_neuron_index(network, 1, row)
-            neuron = get_neuron(network, neuron_i)
-            !neuron.movable && continue
-            others = modifiers[:, 1:(i - 1), row]
-            modifiers[:, i, row] .= random_distanced_vector(others, m_mod, min_angle)
-            b_modifiers[neuron_i] = modifiers[:, i, row]
-        end
-        # behaviours[i] = behaviour_unmoving(network)
-        behaviours[i] = Behaviour(b_goals, true, b_modifiers)
+        behaviours[i] = Behaviour(rand(), rand())
     end
     return behaviours
 end
 
-function Trainer(net::Network, opt::Optimization, sim::Simulation, num::Int)
-    return Trainer(create_behaviours(net, num), sim, opt)
+function Trainer(opt::Optimization, sim::Simulation, num::Int)
+    return Trainer(create_behaviours(num), sim, opt)
 end
 
 include("SimulationDiff.jl")
@@ -508,6 +495,7 @@ include("SimulationEuler.jl")
 include("PPSOptimizer.jl")
 include("Evolution.jl")
 include("Backpropagation.jl")
+include("Res.jl")
 
 
 """
@@ -526,7 +514,7 @@ function simulate!(
     behaviour::Behaviour;
     vis::Union{Visualizer,Nothing}=nothing,
 )
-    sim.modifier = (network, acc) -> addvelocity!(network, acc, behaviour.modifiers)
+    sim.modifier = (network, acc, t) -> resonate!(network, acc, behaviour.modifiers, t)
     return simulate!(network, sim; vis=vis)
 end
 

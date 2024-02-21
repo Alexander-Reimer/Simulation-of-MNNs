@@ -134,6 +134,6 @@ function draw!(r)
         ox[] = x
         oy[] = y
 
-        sleep(0.08)
+        sleep(0.01)
     end
 end
