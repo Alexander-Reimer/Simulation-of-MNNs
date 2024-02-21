@@ -22,7 +22,11 @@ using MetaGraphsNext
 using Observables # updating visualization
 using Random # UUIDs & setting rand seed
 using StaticArrays
+<<<<<<< HEAD
 using Statistics
+=======
+using Statistics # mean
+>>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 # CairoMakie.activate!()
 
 """
@@ -100,17 +104,22 @@ end
 
 include("Visualize.jl")
 
+<<<<<<< HEAD
 mutable struct Behaviour
     goals::Float64
 
     modifiers::Float64
 end
+=======
+abstract type Behaviour end
+>>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 
 abstract type Optimization end
+
 abstract type Simulation end
 
 mutable struct Trainer
-    behaviours::Vector{Behaviour}
+    behaviours::Vector{T} where T <: Behaviour
     simulation::Simulation
     optimization::Optimization
 end
@@ -308,6 +317,7 @@ function get_spring(network, n1, n2; label::Bool=true)
     return network.graph.edge_data[tn1, tn2]
 end
 
+<<<<<<< HEAD
 function addvelocity!(network::Network, acc::Matrix, modifiers)
     #TODO: what about unmovables?
     for row in 1:network.row_counts[1]
@@ -325,6 +335,8 @@ function resonate!(network, acc, frequency, t)
     end
 end
 
+=======
+>>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 netpush!(network, acc) = addvelocity!(network, acc, [0.1, 0])
 netpull!(network, acc) = addvelocity!(network, acc, [-0.1, 0])
 
@@ -382,6 +394,7 @@ function get_spring_constants_vec(network::Network)
     return spring_constants
 end
 
+<<<<<<< HEAD
 function calc_loss(n::Network,sim::Simulation,behaviours::Vector{Behaviour})
     l = 0
     for b in behaviours
@@ -396,6 +409,8 @@ function calc_loss(n::Network,sim::Simulation,behaviours::Vector{Behaviour})
     return l / length(behaviours)
 end
 
+=======
+>>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 function calc_losses!(
     network,
     candidates,
@@ -478,10 +493,38 @@ function random_distanced_vector(others, m, min_angle)
     return result
 end
 
+<<<<<<< HEAD
 function create_behaviours(num::Int)
     behaviours = Vector{Behaviour}(undef, num)
     for i in eachindex(behaviours)
         behaviours[i] = Behaviour(rand(), rand())
+=======
+function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=1, m_mod=0.1)
+    behaviours = Vector{Deformation}(undef, num)
+    goals = Array{Float64,3}(undef, 2, num, network.row_counts[end])
+    modifiers = Array{Float64,3}(undef, 2, num, network.row_counts[1])
+    for i in eachindex(behaviours)
+        b_goals = Dict()
+        b_modifiers = Dict()
+        for row in 1:network.row_counts[end]
+            neuron_i = get_neuron_index(network, network.columns, row)
+            neuron = get_neuron(network, neuron_i)
+            !neuron.movable && continue
+            others = goals[:, 1:(i - 1), row]
+            goals[:, i, row] .= random_distanced_vector(others, m_goal, min_angle)
+            b_goals[neuron_i] = goals[:, i, row]
+        end
+        for row in shuffle(1:network.row_counts[1])
+            neuron_i = get_neuron_index(network, 1, row)
+            neuron = get_neuron(network, neuron_i)
+            !neuron.movable && continue
+            others = modifiers[:, 1:(i - 1), row]
+            modifiers[:, i, row] .= random_distanced_vector(others, m_mod, min_angle)
+            b_modifiers[neuron_i] = modifiers[:, i, row]
+        end
+        # behaviours[i] = behaviour_unmoving(network)
+        behaviours[i] = Deformation(b_goals, true, b_modifiers)
+>>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
     end
     return behaviours
 end
@@ -495,18 +538,23 @@ include("SimulationEuler.jl")
 include("PPSOptimizer.jl")
 include("Evolution.jl")
 include("Backpropagation.jl")
+<<<<<<< HEAD
 include("Res.jl")
 
+=======
+include("Resonance.jl")
+include("Deformation.jl")
+>>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 
 """
-    simulate!(
-    network::Network,
-    sim::Simulation,
-    behaviour::Behaviour;
-    vis::Union{Visualizer,Nothing}=nothing,
-)
+    simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
 
-TBW
+Simulate network with given behaviour. Simulation method is determined by type of `sim`;
+currently [`MNN.Diff`](@ref) and [`MNN.Euler`](@ref) are implemented.
+
+To implement your own, you need to define a struct that is a subtype of
+[`MNN.Simulation`](@ref) and has the field `modifier::Function`. Then overload the function
+`MNN.simulate!(network::Network, sim::YourType; vis::Union{Visualizer, Nothing} = nothing)`.
 """
 function simulate!(
     network::Network,
@@ -514,24 +562,50 @@ function simulate!(
     behaviour::Behaviour;
     vis::Union{Visualizer,Nothing}=nothing,
 )
+<<<<<<< HEAD
     sim.modifier = (network, acc, t) -> resonate!(network, acc, behaviour.modifiers, t)
+=======
+    @info "abc1"
+    sim.modifier = (network, acc) -> addvelocity!(network, acc, behaviour.modifiers)
+>>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
     return simulate!(network, sim; vis=vis)
+end
+
+function nearest_neuron(x, y, net::Network)
+    min_dist = Inf
+    min_i = -1
+    for col in [1, net.columns]
+        for row in 1:net.row_counts[col]
+            i = get_neuron_index(net, col, row)
+            dist = (x - net.positions[1, i])^2 + (y - net.positions[2, i])^2
+            if dist < min_dist
+                min_dist = dist
+                min_i = i
+            end
+        end
+    end
+    return min_i
 end
 
 """
     get_user_behaviour(network::Network)
 
-Get user input for behaviour.
+Get deformation behaviour using GUI. Left click on a neuron (first or last column) to select
+it, then release left mouse button and move mouse pointer to move the other end of the goal
+/ force vector. Click left mouse button again to confirm.
+
+If you have set all force and goal vectors you want, press space to finish. The function will
+then return a [`MNN.Behaviour`](@ref) object.
 """
 function get_user_behaviour(network::Network)
     reset!(network)
     vis = Visualizer(network)
+    deregister_interaction!(vis.ax, :rectanglezoom)
     scene = vis.fig.scene
     # https://github.com/MakieOrg/Makie.jl/issues/653#issuecomment-660009208
     glfw_window = GLMakie.to_native(display(vis.fig))
 
-    # MODIFIERS
-    n = Observable(0)
+    n = -1
 
     vec_points = Array{Observable{Point2f},1}(undef, network.neuron_count)
     for i in eachindex(vec_points)
@@ -543,57 +617,58 @@ function get_user_behaviour(network::Network)
     is_clicked = Observable(false)
 
     on(events(scene).mousebutton) do event
-        if event.button == Mouse.right && event.action == Mouse.press
-            plt, n = pick(vis.fig)
-            # if neuron in first column or neuron between (non inclusive) of first and last column
-            if !get_neuron(network, n).movable ||
-                network.row_counts[1] < n < get_neuron_index(network, network.columns, 1)
-                return nothing
-            end
-            is_clicked[] = true
-            if (n ∈ already_created)
-                return nothing
-            end
-            push!(already_created, n)
-            n_pos = network.positions[:, n]
-            vec_points[n][] = mouseposition(vis.ax)
-            vec_point = vec_points[n]
-            is_modifier = n <= network.row_counts[1]
-
-            if (is_modifier)
-                dx1 = lift(a -> [n_pos[1] - a[1]], vec_point)
-                dy1 = lift(a -> [n_pos[2] - a[2]], vec_point)
-                start = lift(dx1, dy1) do dx, dy
-                    return n_pos - normalize([dx[1], dy[1]]) * 0.12
-                end
-            else
-                dx1 = lift(a -> [a[1] - n_pos[1]], vec_point)
-                dy1 = lift(a -> [a[2] - n_pos[2]], vec_point)
-                start = lift(dx1, dy1) do dx, dy
-                    return n_pos
-                end
-            end
-            start_x = lift(a -> [a[1]], start)
-            start_y = lift(a -> [a[2]], start)
-
-            if (is_modifier)
-                arrows!(start_x, start_y, dx1, dy1; color=:blue, align=:tailend)
-            else
-                arrows!(start_x, start_y, dx1, dy1; color=:red)
-            end
-        end
-    end
-
-    on(events(scene).mousebutton) do event
         if event.button == Mouse.left && event.action == Mouse.press
             is_clicked[] = !is_clicked[]
+            if is_clicked[]
+                n = nearest_neuron(mouseposition(vis.ax)..., network)
+                if n <= 0
+                    return nothing
+                end
+                # if neuron not movable or neuron between (non inclusive) of first and last column
+                if !get_neuron(network, n[]).movable ||
+                    network.row_counts[1] < n < get_neuron_index(network, network.columns, 1)
+                    return nothing
+                end
+                if (n ∈ already_created)
+                    return nothing
+                end
+                push!(already_created, n)
+                n_pos = network.positions[:, n]
+                vec_points[n][] = mouseposition(vis.ax)
+                vec_point = vec_points[n]
+                is_modifier = n <= network.row_counts[1]
+
+                if (is_modifier)
+                    dx1 = lift(a -> [n_pos[1] - a[1]], vec_point)
+                    dy1 = lift(a -> [n_pos[2] - a[2]], vec_point)
+                    start = lift(dx1, dy1) do dx, dy
+                        return n_pos - normalize([dx[1], dy[1]]) * 0.12
+                    end
+                else
+                    dx1 = lift(a -> [a[1] - n_pos[1]], vec_point)
+                    dy1 = lift(a -> [a[2] - n_pos[2]], vec_point)
+                    start = lift(dx1, dy1) do dx, dy
+                        return n_pos
+                    end
+                end
+                start_x = lift(a -> [a[1]], start)
+                start_y = lift(a -> [a[2]], start)
+
+                if (is_modifier)
+                    arrows!(start_x, start_y, dx1, dy1; color=:blue, align=:tailend)
+                else
+                    arrows!(start_x, start_y, dx1, dy1; color=:red)
+                end
+            end
         end
     end
 
     on(events(scene).mouseposition) do event
         if is_clicked[]
-            vec_points[n][] = mouseposition(vis.ax)
-            notify(vec_points[n])
+            if n > 0
+                vec_points[n][] = mouseposition(vis.ax)
+                notify(vec_points[n])
+            end
         end
     end
 
@@ -624,7 +699,7 @@ function get_user_behaviour(network::Network)
         end
     end
 
-    return Behaviour(goals, true, modifiers)
+    return Deformation(goals, true, modifiers)
 end
 
 end

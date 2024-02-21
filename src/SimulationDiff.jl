@@ -43,15 +43,12 @@ end
 #=function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=nothing)
     p = (network, 0.2, sim.modifier)
     tspan = (0.0, sim.time)
-    # prob = SteadyStateProblem(SecondOrderODEProblem{true}(
-    #     simulation_step, network.velocities, network.positions, tspan, p
-    # ))
-    prob = SecondOrderODEProblem{true}(simulation_step, network.velocities, network.positions, tspan, p)
+    prob = SecondOrderODEProblem{true}(
+        simulation_step, network.velocities, network.positions, tspan, p
+    )
 
     if vis === nothing
-        integrator = init(prob, AutoTsit5(Rosenbrock23())#, saveat=tspan[end]
-        # , reltol=1e-3, abstol=1e-6
-        )
+        integrator = init(prob, AutoTsit5(Rosenbrock23()))
     else
         integrator = init(prob, AutoTsit5(Rosenbrock23()))
     end
@@ -62,16 +59,18 @@ end
             # @info "t: $(integ.t)"
             sleep(0.01)
         end
-        # exit if sum of changes in position is small enough
-        if sum(abs.(integ.sol.u[end].x[1])) < 0.001
+        mean_pos_change = sum(abs, integ.u.x[2] .- integ.uprev.x[2]) / length(integ.u.x[2])
+        mean_velocity = sum(abs, integ.u.x[1]) / length(integ.u.x[1])
+        if integ.t > 5 && mean_pos_change < 1.5e-5 && mean_velocity < 1.5e-5
             # @info "Early break at: $(integ.t)"
             break
         end
     end
     if (integrator.t == sim.time)
-        @warn "Simulation did not reach steady state"
+        @warn "Simulation did not reach steady state!"
     end
     network.positions = integrator.sol.u[end].x[2]
+<<<<<<< HEAD
     return integrator.sol
 end=#
 
@@ -101,4 +100,7 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
     end
     network.positions = positions
     return mat[Int(size(mat)[1] / 2 + 1):size(mat)[1], :]
+=======
+    return integrator
+>>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 end
