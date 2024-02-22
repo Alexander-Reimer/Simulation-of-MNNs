@@ -11,19 +11,10 @@ function addvelocity!(network::Network, acc::Matrix, modifiers)
     end
 end
 
-function calc_loss(network::Network, sim::Simulation, behaviours::Vector{Deformation})
-    len = length(behaviours)
-    len == 0 && throw(ArgumentError("`behaviours` can't be an empty vector"))
-    l = 0
-    for b in behaviours
-        reset!(network)
-        simulate!(network, sim, b)
-        l += loss(network, b)
-    end
-    if isnan(l)
-        @info "l: $l, length: $(len)"
-    end
-    return l / len
+function calc_loss(network::Network, sim::Simulation, behaviour::Deformation)
+    reset!(network)
+    simulate!(network, sim, behaviour)
+    return loss(network, behaviour)
 end
 
 function simulate!(

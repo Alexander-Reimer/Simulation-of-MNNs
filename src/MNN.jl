@@ -308,7 +308,7 @@ end
 netpush!(network, acc) = addvelocity!(network, acc, [0.1, 0])
 netpull!(network, acc) = addvelocity!(network, acc, [-0.1, 0])
 
-function loss(network::Network, behaviour::Behaviour)
+function loss(network::Network, behaviour::Deformation)
     s = 0
     length(behaviour.goals) == 0 && @warn "No goals in behaviour!"
     for (neuron_i, goal_pos) in behaviour.goals
@@ -360,6 +360,16 @@ function get_spring_constants_vec(network::Network)
     end
 
     return spring_constants
+end
+
+function calc_loss(network::Network, sim::Simulation, behaviours::Vector{T}) where T<:Behaviour
+    len = length(behaviours)
+    len == 0 && throw(ArgumentError("`behaviours` can't be an empty vector"))
+    l = 0
+    for b in behaviours
+        l += calc_loss(network, sim, b)
+    end
+    return l / len
 end
 
 function calc_losses!(

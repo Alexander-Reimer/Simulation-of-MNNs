@@ -11,31 +11,25 @@ function resonate!(network::Network, acc, modifiers, t)
 end
 
 #TODO: implement for Euler
-function calc_loss(network::Network, sim::Diff, behaviours::Vector{Resonance})
-    l = 0
-    for b in behaviours
-        reset!(network)
-        integ = simulate!(network, sim, b)
-        foo = round(Int, integ.t / 5)
-        b_l = 0.0
-        for (n, target_a) in b.goals # neuron and target amplitude
-            max_x = maximum(integ.sol.u[end-foo:end]) do curr_solution
-                positions = curr_solution.x[2]
-                return positions[1, n] # only x component
-            end
-            min_x = minimum(integ.sol.u[(end - foo + 1):end]) do curr_solution
-                positions = curr_solution.x[2]
-                return positions[1, n] # only x component
-            end
-            actual_a = (max_x - min_x) / 2 # actual amplitude
-            b_l += (target_a - actual_a)^2
+function calc_loss(network::Network, sim::Diff, behaviour::Resonance)
+    reset!(network)
+    integ = simulate!(network, sim, behaviour)
+    # portion of the simulation to consider (0.2 --> last 20% of the simulation)
+    portion = round(Int, integ.t / 5)
+    l = 0.0
+    for (n, target_a) in behaviour.goals # neuron and target amplitude
+        max_x = maximum(integ.sol.u[(end - portion):end]) do curr_solution
+            positions = curr_solution.x[2]
+            return positions[1, n] # only x component
         end
-        l += b_l / length(b.goals)
+        min_x = minimum(integ.sol.u[(end - portion):end]) do curr_solution
+            positions = curr_solution.x[2]
+            return positions[1, n] # only x component
+        end
+        actual_a = (max_x - min_x) / 2 # actual amplitude
+        l += (target_a - actual_a)^2
     end
-    if isnan(l)
-        @info "l: $l, length: $(length(behaviours))"
-    end
-    return l / length(behaviours)
+    return l / length(behaviour.goals)
 end
 
 function simulate!(
