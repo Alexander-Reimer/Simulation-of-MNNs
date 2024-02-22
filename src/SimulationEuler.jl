@@ -4,7 +4,7 @@ mutable struct Euler <: Simulation
     showfps::Bool
     modifier::Function
 end
-Euler(time) = Euler(time, 0.01, false, (network, delta) -> nothing)
+Euler(time) = Euler(time, 0.025, false, (network, delta, t) -> nothing)
 
 function displacement2force(diff, spring_constant)
     if abs(diff) > 0.1
@@ -29,7 +29,7 @@ function calculate_force(network::Network, n::Int)
             norm(diff)
         if isnan.(f) != [0, 0]
             throw(
-                "calculated force as NaN at neighboring neuron $nn with pos $(neuron.pos)"
+                "calculated force as NaN at neighboring neuron $nn"
             )
         end
     end
@@ -56,9 +56,11 @@ end
 function simulate!(network::Network, sim::Euler; vis::Union{Visualizer,Nothing}=nothing)
     sim.showfps ? start_time = time() : nothing
     steps = sim.time / sim.delta
+    time = 0
     for _ in 1:steps
+        time += sim.delta
         accelerations = zeros(Float64, 2, network.row_counts[1])
-        sim.modifier(network, accelerations)
+        sim.modifier(network, accelerations, time)
         for row in 1:network.row_counts[1]
             network.velocities[:, row] .+= accelerations[:, row] * sim.delta
         end
@@ -67,7 +69,7 @@ function simulate!(network::Network, sim::Euler; vis::Union{Visualizer,Nothing}=
         end
         if vis !== nothing
             update_positions!(vis, network)
-            sleep(sim.delta / 100)
+            # sleep(sim.delta / 100)
         end
         # TODO: adjust delta automatically dependant on fps?
     end
