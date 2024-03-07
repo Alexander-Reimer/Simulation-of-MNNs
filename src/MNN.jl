@@ -134,6 +134,14 @@ function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
     )
 end
 
+include("SimulationDiff.jl")
+include("SimulationEuler.jl")
+include("PPSOptimizer.jl")
+include("Evolution.jl")
+include("Backpropagation.jl")
+include("Resonance.jl")
+include("Deformation.jl")
+
 function print_graph(network::Network)
     for col in 1:(network.columns)
         println("Column: $col")
@@ -487,14 +495,6 @@ function Trainer(net::Network, opt::Optimization, sim::Simulation, num::Int)
     return Trainer(create_behaviours(net, num), sim, opt)
 end
 
-include("SimulationDiff.jl")
-include("SimulationEuler.jl")
-include("PPSOptimizer.jl")
-include("Evolution.jl")
-include("Backpropagation.jl")
-include("Resonance.jl")
-include("Deformation.jl")
-
 """
     simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
 
@@ -512,7 +512,7 @@ function simulate!(
     vis::Union{Visualizer,Nothing}=nothing,
 )
     @info "abc1"
-    sim.modifier = (network, acc) -> addvelocity!(network, acc, behaviour.modifiers)
+    sim.modifier = (network, acc, t) -> addvelocity!(network, acc, behaviour.modifiers)
     return simulate!(network, sim; vis=vis)
 end
 

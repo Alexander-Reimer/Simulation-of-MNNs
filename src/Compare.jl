@@ -310,4 +310,18 @@ function get_start_mutation_strengths(df_e, df)
     return result
 end
 
+function resonance_test()
+    net = MNN.Network(11, 4)
+    r = MNN.Resonance(Dict(37 => 0.0), Dict(1 => [2, 0.1], 2 => [2, 0.1], 3 => [2, 0.1]))
+    t = MNN.Trainer([r], Diff(300), PPS())
+    freqs = 0.0:0.2:3.0
+    amps = []
+    push!(amps, MNN.calculate_resonance_curve(net, freqs, 0.1, 37))
+    for i in 1:10
+        MNN.train!(net, 100, t)
+        push!(amps, MNN.calculate_resonance_curve(net, freqs, 0.1, 37))
+    end
+    return net, amps
+end
+
 end

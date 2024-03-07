@@ -10,6 +10,18 @@ function resonate!(network::Network, acc, modifiers, t)
     end
 end
 
+function calc_amplitude(neuron, integ, portion)
+    max_x = maximum(integ.sol.u[(end - portion):end]) do curr_solution
+        positions = curr_solution.x[2]
+        return positions[1, neuron] # only x component
+    end
+    min_x = minimum(integ.sol.u[(end - portion):end]) do curr_solution
+        positions = curr_solution.x[2]
+        return positions[1, neuron] # only x component
+    end
+    return (max_x - min_x) / 2
+end
+
 #TODO: implement for Euler
 function calc_loss(network::Network, sim::Diff, behaviour::Resonance)
     reset!(network)
@@ -40,4 +52,52 @@ function simulate!(
 )
     sim.modifier = (network, acc, t) -> resonate!(network, acc, behaviour.modifiers, t)
     return simulate!(network, sim; vis=vis)
+end
+
+function calculate_resonance_curve(network::Network, frequencies, amplitude, neuron)
+    amplitudes = Vector{Float64}(undef, length(frequencies))
+    sim = Diff(500, (network, acc, t) -> nothing)
+    for i in eachindex(frequencies)
+        f = frequencies[i]
+        mods = Dict()
+        for n in 1:network.row_counts[1]
+            mods[n] = [f, amplitude]
+        end
+        sim.modifier = (network, acc, t) -> resonate!(network, acc, mods, t)
+        reset!(network)
+        integ = simulate!(network, sim)
+        amplitudes[i] = calc_amplitude(neuron, integ, round(Int, integ.t / 5))
+    end
+    return amplitudes
+end
+
+function calc_res(n, sim)
+    frequencies = [0.01 * 1.065^i for i in 1:100]
+    data = []
+
+    for f in frequencies
+        reset!(n)
+        sim.modifier =
+            (n, acc, t) ->
+                resonate!(n, acc, Dict(1 => [f, 0.1], 2 => [f, 0.1], 3 => [f, 0.1]), t)
+        integ = simulate!(n, sim)
+        foo = round(Int, integ.t / 5)
+
+        ampli = []
+
+        for neuro in 1:n.row_counts[n.rows]
+            max_x = maximum(integ.sol.u[(end - foo):end]) do curr_solution
+                positions = curr_solution.x[2]
+                return positions[1, get_neuron_index(n, n.columns, neuro)] # only x component
+            end
+            min_x = minimum(integ.sol.u[(end - foo + 1):end]) do curr_solution
+                positions = curr_solution.x[2]
+                return positions[1, get_neuron_index(n, n.columns, neuro)] # only x component
+            end
+            push!(ampli, (max_x - min_x) / 2)
+        end
+        println(mean(ampli))
+        push!(data, mean(ampli))
+    end
+    return frequencies, data
 end
