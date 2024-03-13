@@ -317,17 +317,17 @@ function resonance_test(net=nothing, t=nothing)
     if t === nothing
         # r = MNN.Resonance(Dict(37 => 0.0), Dict(1 => [2, 0.1], 2 => [2, 0.1], 3 => [2, 0.1]))
         r1 = MNN.Resonance(
-            Dict(37 => 0.25), Dict(1 => [2, 0.1], 2 => [2, 0.1], 3 => [2, 0.1])
+            Dict(37 => 0.4), Dict(1 => [1.8, 0.1], 2 => [1.8, 0.1], 3 => [1.8, 0.1])
         )
         r2 = MNN.Resonance(
-            Dict(37 => 0.25), Dict(1 => [0.5, 0.1], 2 => [0.5, 0.1], 3 => [0.5, 0.1])
+            Dict(37 => 0.4), Dict(1 => [0.4, 0.1], 2 => [0.4, 0.1], 3 => [0.4, 0.1])
         )
         r3 = MNN.Resonance(
-            Dict(37 => 0.0), Dict(1 => [1.2, 0.1], 2 => [1.2, 0.1], 3 => [1.2, 0.1])
+            Dict(37 => 0.1), Dict(1 => [1, 0.1], 2 => [1, 0.1], 3 => [1, 0.1])
         )
-        t = MNN.Trainer([r1, r2, r3], Diff(300), PPS())
+        t = MNN.Trainer([r1, r2, r3], Diff(150), PPS())
     end
-    freqs = 0.0:0.2:3.0
+    freqs = 0.0:0.2:2.2
     amps = []
     push!(amps, MNN.calculate_resonance_curve(net, freqs, 0.1, 37))
     for i in 1:3
