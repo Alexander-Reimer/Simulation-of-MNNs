@@ -67,9 +67,15 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
             break
         end
     end
+<<<<<<< HEAD
+    #if (integrator.t == sim.time)
+    #    @warn "Simulation did not reach steady state!"
+    #end
+=======
     if (integrator.t == sim.time)
         # @warn "Simulation did not reach steady state!"
     end
+>>>>>>> 7bc0b61df32a49bd84ffceb3b6a15d1d8a026c4f
     network.positions = integrator.sol.u[end].x[2]
     return integrator
 end

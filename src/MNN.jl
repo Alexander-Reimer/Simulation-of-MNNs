@@ -491,8 +491,8 @@ function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=
     return behaviours
 end
 
-function Trainer(net::Network, opt::Optimization, sim::Simulation, num::Int)
-    return Trainer(create_behaviours(net, num), sim, opt)
+function Trainer(opt::Optimization, sim::Simulation, num::Int)
+    return Trainer(create_behaviours(num), sim, opt)
 end
 
 """
