@@ -62,20 +62,14 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
         # TODO: maximum?
         mean_pos_change = sum(abs, integ.u.x[2] .- integ.uprev.x[2]) / length(integ.u.x[2])
         mean_velocity = sum(abs, integ.u.x[1]) / length(integ.u.x[1])
-        if integ.t > 5 && mean_pos_change < 1.5e-4 && mean_velocity < 1.5e-4
+        if integ.t > 5 && mean_pos_change < 1.5e-5 && mean_velocity < 1.5e-5
             # @info "Early break at: $(integ.t)"
             break
         end
     end
-<<<<<<< HEAD
-    #if (integrator.t == sim.time)
-    #    @warn "Simulation did not reach steady state!"
-    #end
-=======
     if (integrator.t == sim.time)
         # @warn "Simulation did not reach steady state!"
     end
->>>>>>> 7bc0b61df32a49bd84ffceb3b6a15d1d8a026c4f
     network.positions = integrator.sol.u[end].x[2]
     return integrator
 end

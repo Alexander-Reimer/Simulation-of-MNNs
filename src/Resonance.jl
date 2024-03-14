@@ -3,6 +3,16 @@ mutable struct Resonance <: Behaviour
     modifiers::Dict{Int,Vector{Number}}
 end
 
+function Resonance(num_goals)
+    b = Vector{Resonance}()
+    for i =1:num_goals
+        r = rand()/4
+        f =  0.2+(1.8*(i-1)/(num_goals-1))
+        push!(b, Resonance(Dict(15=>r, 16=>r, 17=>r), Dict(1=>[f,0.1], 2=>[f, 0.1], 3=>[f, 0.1])) )
+    end
+    return b
+end
+
 function resonate!(network::Network, acc, modifiers, t)
     for (n, m) in modifiers
         f, a = m[1], m[2] # frequency and amplitude
@@ -44,7 +54,7 @@ function calc_loss(network::Network, sim::Diff, behaviour::Resonance)
     return l / length(behaviour.goals)
 end
 
-function calc_res(n, sim)
+#=function calc_res(n, sim)
     frequencies = [ 0.01*1.065^i for i = 1:100]
     data = []
 
@@ -73,7 +83,7 @@ function calc_res(n, sim)
 
 
     return frequencies, data
-end
+end=#
 
 function simulate!(
     network::Network,
