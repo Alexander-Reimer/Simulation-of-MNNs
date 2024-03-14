@@ -22,11 +22,7 @@ using MetaGraphsNext
 using Observables # updating visualization
 using Random # UUIDs & setting rand seed
 using StaticArrays
-<<<<<<< HEAD
-using Statistics
-=======
 using Statistics # mean
->>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 # CairoMakie.activate!()
 
 """
@@ -104,15 +100,7 @@ end
 
 include("Visualize.jl")
 
-<<<<<<< HEAD
-mutable struct Behaviour
-    goals::Float64
-
-    modifiers::Float64
-end
-=======
 abstract type Behaviour end
->>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 
 abstract type Optimization end
 
@@ -317,26 +305,6 @@ function get_spring(network, n1, n2; label::Bool=true)
     return network.graph.edge_data[tn1, tn2]
 end
 
-<<<<<<< HEAD
-function addvelocity!(network::Network, acc::Matrix, modifiers)
-    #TODO: what about unmovables?
-    for row in 1:network.row_counts[1]
-        neuron_i = get_neuron_index(network, 1, row)
-        if haskey(modifiers, neuron_i)
-            #TODO: check indexing
-            acc[:, row] += modifiers[neuron_i]
-        end
-    end
-end
-
-function resonate!(network, acc, frequency, t)
-    for row in 1:network.row_counts[1]
-        acc[:, row] += [sin(t*frequency/(2pi))/10,0]
-    end
-end
-
-=======
->>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 netpush!(network, acc) = addvelocity!(network, acc, [0.1, 0])
 netpull!(network, acc) = addvelocity!(network, acc, [-0.1, 0])
 
@@ -394,23 +362,6 @@ function get_spring_constants_vec(network::Network)
     return spring_constants
 end
 
-<<<<<<< HEAD
-function calc_loss(n::Network,sim::Simulation,behaviours::Vector{Behaviour})
-    l = 0
-    for b in behaviours
-        reset!(n)
-        r = simulate!(n, sim, b)
-        posx = [r[get_neuron_index(n, n.columns, i)*2-1 ,500:1000] for i = 1:n.row_counts[n.columns]]
-        l += (mean([maximum(p)-minimum(p) for p in posx])-b.goals)^2
-    end
-    if isnan(l)
-        @info "l: $l, length: $(length(behaviours))"
-    end
-    return l / length(behaviours)
-end
-
-=======
->>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 function calc_losses!(
     network,
     candidates,
@@ -493,12 +444,6 @@ function random_distanced_vector(others, m, min_angle)
     return result
 end
 
-<<<<<<< HEAD
-function create_behaviours(num::Int)
-    behaviours = Vector{Behaviour}(undef, num)
-    for i in eachindex(behaviours)
-        behaviours[i] = Behaviour(rand(), rand())
-=======
 function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=1, m_mod=0.1)
     behaviours = Vector{Deformation}(undef, num)
     goals = Array{Float64,3}(undef, 2, num, network.row_counts[end])
@@ -524,7 +469,6 @@ function create_behaviours(network::Network, num::Int; min_angle=π / 3, m_goal=
         end
         # behaviours[i] = behaviour_unmoving(network)
         behaviours[i] = Deformation(b_goals, true, b_modifiers)
->>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
     end
     return behaviours
 end
@@ -538,13 +482,8 @@ include("SimulationEuler.jl")
 include("PPSOptimizer.jl")
 include("Evolution.jl")
 include("Backpropagation.jl")
-<<<<<<< HEAD
-include("Res.jl")
-
-=======
 include("Resonance.jl")
 include("Deformation.jl")
->>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
 
 """
     simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
@@ -562,12 +501,8 @@ function simulate!(
     behaviour::Behaviour;
     vis::Union{Visualizer,Nothing}=nothing,
 )
-<<<<<<< HEAD
-    sim.modifier = (network, acc, t) -> resonate!(network, acc, behaviour.modifiers, t)
-=======
     @info "abc1"
     sim.modifier = (network, acc) -> addvelocity!(network, acc, behaviour.modifiers)
->>>>>>> f800a35abd0f86d23522f626721e9b457b59de6e
     return simulate!(network, sim; vis=vis)
 end
 

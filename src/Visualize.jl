@@ -95,7 +95,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
         end
 
         for (n, coords) in behaviour.modifiers
-            coords *= 10
+            coords *= 20
             # shorten the arrow by 0.15 units so the tip is in middle of the circle
             start_coords = @lift([$neuron_xs[n], $neuron_ys[n]] - normalize(coords) * 0.15)
             x = @lift([$start_coords[1]])

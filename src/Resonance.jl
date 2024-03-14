@@ -38,6 +38,37 @@ function calc_loss(network::Network, sim::Diff, behaviours::Vector{Resonance})
     return l / length(behaviours)
 end
 
+function calc_res(n, sim)
+    frequencies = [ 0.01*1.065^i for i = 1:100]
+    data = []
+
+    for f in frequencies
+        reset!(n)
+        sim.modifier = (n, acc, t) -> resonate!(n, acc, Dict(1=>[f,0.1], 2=>[f,0.1], 3=>[f,0.1]), t)
+        integ = simulate!(n, sim)
+        foo = round(Int, integ.t / 5)
+
+        ampli = []
+
+        for neuro in 1:n.row_counts[n.rows]
+            max_x = maximum(integ.sol.u[end-foo:end]) do curr_solution
+                positions = curr_solution.x[2]
+                return positions[1, get_neuron_index(n,n.columns,neuro)] # only x component
+            end
+            min_x = minimum(integ.sol.u[(end - foo + 1):end]) do curr_solution
+                positions = curr_solution.x[2]
+                return positions[1, get_neuron_index(n,n.columns,neuro)] # only x component
+            end
+            push!(ampli, (max_x - min_x) / 2)
+        end
+        println(mean(ampli))
+        push!(data, mean(ampli))
+    end
+
+
+    return frequencies, data
+end
+
 function simulate!(
     network::Network,
     sim::Simulation,
