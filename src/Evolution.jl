@@ -125,7 +125,7 @@ function train!(
             spring_data = opt.candidates[index[1]]
             loss = losses[index[1]]
         else
-            opt.mutation_strength *= 0.7
+            opt.mutation_strength *= 0.95
         end
         println(loss)
 

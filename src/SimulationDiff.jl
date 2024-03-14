@@ -2,7 +2,7 @@ mutable struct Diff <: Simulation
     time::Number
     modifier::Function
 end
-Diff(time::Number) = Diff(time, (network, accelerations) -> nothing)
+Diff(time::Number) = Diff(time, (network, accelerations, t) -> nothing)
 
 springforce(x, k) = -x * (k + x * x)
 
@@ -59,6 +59,7 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
             # @info "t: $(integ.t)"
             sleep(0.01)
         end
+        # TODO: maximum?
         mean_pos_change = sum(abs, integ.u.x[2] .- integ.uprev.x[2]) / length(integ.u.x[2])
         mean_velocity = sum(abs, integ.u.x[1]) / length(integ.u.x[1])
         if integ.t > 5 && mean_pos_change < 1.5e-5 && mean_velocity < 1.5e-5
@@ -66,9 +67,15 @@ function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=n
             break
         end
     end
+<<<<<<< HEAD
     #if (integrator.t == sim.time)
     #    @warn "Simulation did not reach steady state!"
     #end
+=======
+    if (integrator.t == sim.time)
+        # @warn "Simulation did not reach steady state!"
+    end
+>>>>>>> 7bc0b61df32a49bd84ffceb3b6a15d1d8a026c4f
     network.positions = integrator.sol.u[end].x[2]
     return integrator
 end

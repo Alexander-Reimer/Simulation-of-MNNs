@@ -18,7 +18,7 @@ function create_df()
         mag_modifier=Float64[],
         sim_type=String[],
         sim_time=Float64[],
-        mutation_strength=Int64[],
+        mutation_strength=Float64[],
         popsize=Int64[],
         loss=Float64[],
     )
@@ -34,7 +34,7 @@ macro init_comp()
             CSV.write(io, df)
         end
         num_behaviours = 1
-        epochs = 200
+        epochs = 1000
         sim_time = 1000
         rows = 5
         columns = 4
@@ -58,9 +58,9 @@ end
 
 function save_df(filepath, df)
     open(filepath; append=true, truncate=false) do io
-        CSV.write(io, df, append=true)
+        CSV.write(io, df; append=true)
     end
-    empty!(df)
+    return empty!(df)
 end
 
 macro save(x)
@@ -81,7 +81,7 @@ macro trainer(opt)
             $opt(net),
         )
         if $opt <: MNN.Evolution
-            t.optimization.mutation_strength = 0.0005
+            t.optimization.mutation_strength = 0.01
             t.optimization.popsize = 10
         end
     end
@@ -106,8 +106,8 @@ macro makeentry()
                     mag_modifier,
                     typename(t.simulation),
                     t.simulation.time,
-                    # round(Int64, t.optimization.mutation_strength * 1000000),
-                    missing, #TODO: saving mutation strength
+                    t.optimization.mutation_strength,
+                    # missing, #TODO: saving mutation strength
                     t.optimization.popsize,
                     MNN.calc_loss(net, t.simulation, t.behaviours),
                 ),
@@ -270,13 +270,13 @@ end
 function mutation_strength(opt_type)
     name = "$(typename(opt_type))MutationStrength"
     @init_comp
-    strength = 0.0001
     @sync for i in 1:10, _ in 1:2
-        strength =  0.0001* i
+        strength = 0.0001 * i
         Threads.@spawn begin
             @init_net
             @trainer(opt_type)
             t.optimization.mutation_strength = $strength
+            # t.optimization.mutation_strength = strength
             @train!
         end
     end
@@ -298,6 +298,30 @@ end
 
 function load(path)
     return CSV.read(path, DataFrame; types=Dict(:uuid => UInt128))
+end
+
+function get_start_mutation_strengths(df_e, df)
+    result = Float64[]
+    df = filter(:epochs => x -> x == 0, df)
+    for row in eachrow(df_e)
+        r = df[df.uuid .== row[:uuid], :]
+        append!(result, r[!, :mutation_strength])
+    end
+    return result
+end
+
+function resonance_test()
+    net = MNN.Network(11, 4)
+    r = MNN.Resonance(Dict(37 => 0.0), Dict(1 => [2, 0.1], 2 => [2, 0.1], 3 => [2, 0.1]))
+    t = MNN.Trainer([r], Diff(300), PPS())
+    freqs = 0.0:0.2:3.0
+    amps = []
+    push!(amps, MNN.calculate_resonance_curve(net, freqs, 0.1, 37))
+    for i in 1:10
+        MNN.train!(net, 100, t)
+        push!(amps, MNN.calculate_resonance_curve(net, freqs, 0.1, 37))
+    end
+    return net, amps
 end
 
 end

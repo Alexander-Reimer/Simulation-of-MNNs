@@ -134,6 +134,14 @@ function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
     )
 end
 
+include("SimulationDiff.jl")
+include("SimulationEuler.jl")
+include("PPSOptimizer.jl")
+include("Evolution.jl")
+include("Backpropagation.jl")
+include("Resonance.jl")
+include("Deformation.jl")
+
 function print_graph(network::Network)
     for col in 1:(network.columns)
         println("Column: $col")
@@ -308,7 +316,7 @@ end
 netpush!(network, acc) = addvelocity!(network, acc, [0.1, 0])
 netpull!(network, acc) = addvelocity!(network, acc, [-0.1, 0])
 
-function loss(network::Network, behaviour::Behaviour)
+function loss(network::Network, behaviour::Deformation)
     s = 0
     length(behaviour.goals) == 0 && @warn "No goals in behaviour!"
     for (neuron_i, goal_pos) in behaviour.goals
@@ -360,6 +368,16 @@ function get_spring_constants_vec(network::Network)
     end
 
     return spring_constants
+end
+
+function calc_loss(network::Network, sim::Simulation, behaviours::Vector{T}) where T<:Behaviour
+    len = length(behaviours)
+    len == 0 && throw(ArgumentError("`behaviours` can't be an empty vector"))
+    l = 0
+    for b in behaviours
+        l += calc_loss(network, sim, b)
+    end
+    return l / len
 end
 
 function calc_losses!(
@@ -477,14 +495,6 @@ function Trainer(opt::Optimization, sim::Simulation, num::Int)
     return Trainer(create_behaviours(num), sim, opt)
 end
 
-include("SimulationDiff.jl")
-include("SimulationEuler.jl")
-include("PPSOptimizer.jl")
-include("Evolution.jl")
-include("Backpropagation.jl")
-include("Resonance.jl")
-include("Deformation.jl")
-
 """
     simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
 
@@ -502,7 +512,7 @@ function simulate!(
     vis::Union{Visualizer,Nothing}=nothing,
 )
     @info "abc1"
-    sim.modifier = (network, acc) -> addvelocity!(network, acc, behaviour.modifiers)
+    sim.modifier = (network, acc, t) -> addvelocity!(network, acc, behaviour.modifiers)
     return simulate!(network, sim; vis=vis)
 end
 

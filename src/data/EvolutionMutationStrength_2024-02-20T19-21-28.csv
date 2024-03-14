@@ -1,0 +1,2 @@
+time,uuid,epochs,rows,columns,behaviours,min_angle,mag_goals,mag_modifier,sim_type,sim_time,mutation_strength,popsize,loss
+2024-02-20T19:21:28.14,293831546717184291253208951626460782475,0,5,4,1,0.0,0.1,0.1,Diff,1000.0,0.0001,10,0.9513923785779196
