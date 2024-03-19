@@ -1,8 +1,11 @@
 {
     "julia.usePlotPane": false,
-    "julia.additionalArgs": ["--threads=auto"],
+    "julia.additionalArgs": [
+        "--threads=auto"
+    ],
     "[markdown]": {
-        "editor.minimap.enabled": false
+        "editor.minimap.enabled": false,
+        "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
     },
     "[julia]": {
         "editor.detectIndentation": false,
@@ -11,7 +14,9 @@
         "files.insertFinalNewline": true,
         "files.trimFinalNewlines": true,
         "files.trimTrailingWhitespace": true,
-        "editor.rulers": [92],
+        "editor.rulers": [
+            92
+        ],
     },
     "window.zoomLevel": 1,
     "latex-workshop.latex.recipe.default": "latexmk (xelatex) (escape)",
@@ -38,5 +43,5 @@
             ],
             "env": {}
         }
-    ]
+    ],
 }
