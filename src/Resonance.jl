@@ -5,10 +5,16 @@ end
 
 function Resonance(num_goals)
     b = Vector{Resonance}()
-    for i =1:num_goals
-        r = rand()/4
-        f =  0.2+(1.8*(i-1)/(num_goals-1))
-        push!(b, Resonance(Dict(15=>r, 16=>r, 17=>r), Dict(1=>[f,0.1], 2=>[f, 0.1], 3=>[f, 0.1])) )
+    for i in 1:num_goals
+        r = rand() / 4
+        f = 0.4 + (1.8 * (i - 1) / (num_goals - 1))
+        push!(
+            b,
+            Resonance(
+                Dict(36 => r, 37 => r, 38 => r),
+                Dict(1 => [f, 0.1], 2 => [f, 0.1], 3 => [f, 0.1]),
+            ),
+        )
     end
     return b
 end
@@ -37,7 +43,7 @@ function calc_loss(network::Network, sim::Diff, behaviour::Resonance)
     reset!(network)
     integ = simulate!(network, sim, behaviour)
     # portion of the simulation to consider (0.2 --> last 20% of the simulation)
-    portion = round(Int, integ.t / 5)
+    portion = round(Int, integ.t / 2)
     l = 0.0
     for (n, target_a) in behaviour.goals # neuron and target amplitude
         max_x = maximum(integ.sol.u[(end - portion):end]) do curr_solution
@@ -107,7 +113,7 @@ function calculate_resonance_curve(network::Network, frequencies, amplitude, neu
         sim.modifier = (network, acc, t) -> resonate!(network, acc, mods, t)
         reset!(network)
         integ = simulate!(network, sim)
-        amplitudes[i] = calc_amplitude(neuron, integ, round(Int, integ.t / 5))
+        amplitudes[i] = calc_amplitude(neuron, integ, round(Int, integ.t / 2))
     end
     return amplitudes
 end
