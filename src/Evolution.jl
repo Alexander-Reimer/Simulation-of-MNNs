@@ -5,16 +5,17 @@ mutable struct Evolution <: Optimization
     mutation_strength::Float64
     popsize::Int
     candidates::Vector{Vector{Float64}}
-    simepochs::Int
+    epochs::Int
 end
 
 function Evolution(net::Network)
+    parallel = true
     spring_data = get_spring_constants_vec(net)
     popsize = 10
-    simepochs = 500
+    epochs = 0
     mutation_strength = 0.00005
     candidates = [mutation(spring_data, mutation_strength) for _ in 1:popsize]
-    return Evolution(true, mutation_strength, popsize, candidates, simepochs)
+    return Evolution(parallel, mutation_strength, popsize, candidates, epochs)
 end
 
 function mutate!(spring_data::Vector, strength=0.1)
@@ -104,16 +105,16 @@ function single_point_crossover(can1, can2)
     return (out1, out2)
 end
 
+# TODO: enable interrupts during training without losing progress or saving worse
+# combination
 function train!(
     network::Network, epochs::Int, behaviours::Vector{T}, sim::Simulation, opt::Evolution
 ) where {T<:Behaviour}
     loss = calc_loss(network, sim, behaviours)
     spring_data = get_spring_constants_vec(network)
     loss_function! = opt.parallel ? calc_losses_parallel! : calc_losses!
+    losses = Vector{Float64}(undef, length(opt.candidates))
     for _ in 1:epochs
-        # TODO: check if pop size ever changes; if no, no need to allocate new
-        # vector every time
-        losses = Vector{Float64}(undef, length(opt.candidates))
         for i in eachindex(opt.candidates)
             opt.candidates[i] = mutation(opt.candidates[i], opt.mutation_strength)
         end
@@ -136,6 +137,7 @@ function train!(
             opt.candidates, index, Int(ceil(opt.popsize * 0.8))
         )  # other 80% are crossover
         opt.candidates = copy(next_gen)
+        opt.epochs += 1
     end
     return set_spring_data!(network, spring_data)
 end

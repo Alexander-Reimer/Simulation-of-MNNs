@@ -5,11 +5,11 @@ mutable struct PPS <: Optimization
     # base_loss::Float64
     selected::Set
     # new_spring_data::Dict{Tuple{Int64,Int64},Spring}
-    sim_epochs::Int
+    epochs::Int
 end
 
-PPS() = PPS(false, 1.15, 1.0, Set(), 250)
-PPS(net) = PPS()
+PPS() = PPS(false, 1.15, 1.0, Set(), 0)
+PPS(net::Network) = PPS()
 
 function select_spring(spring_data, selected::Set)
     # spring_data = get_spring_constants(network)
@@ -34,6 +34,9 @@ function pps_init!(network::Network, opt::PPS)
     end
 end
 
+# TODO: enable interrupts during training without losing progress or saving worse
+# combination
+# TODO: refactor (epochs and opt.epochs)
 function train!(
     network::Network, epochs::Int, behaviours::Vector{T}, sim::Simulation, opt::PPS
 ) where {T<:Behaviour}
@@ -79,6 +82,7 @@ function train!(
         epochs -= 1
         epochs % 20 == 0 &&
             @info "Epochs left: $epochs, base loss: $base_loss, loss: $loss, increment: $(opt.increment)"
+        opt.epochs += 1
         epochs == 0 && break
     end
     set_spring_data!(network, spring_data)
