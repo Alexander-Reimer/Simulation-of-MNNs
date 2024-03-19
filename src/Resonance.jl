@@ -3,18 +3,20 @@ mutable struct Resonance <: Behaviour
     modifiers::Dict{Int,Vector{Number}}
 end
 
-function Resonance(num_goals)
+function Resonance(net::Network, num_goals; amplitude=0.1)
     b = Vector{Resonance}()
     for i in 1:num_goals
         r = rand() / 4
-        f = 0.4 + (1.8 * (i - 1) / (num_goals - 1))
-        push!(
-            b,
-            Resonance(
-                Dict(36 => r, 37 => r, 38 => r),
-                Dict(1 => [f, 0.1], 2 => [f, 0.1], 3 => [f, 0.1]),
-            ),
-        )
+        f = num_goals == 1 ? 1.0 : 1.0 + (2.0 * (i - 1) / (num_goals - 1))
+        goals = Dict()
+        for row in 1:net.row_counts[end]
+            goals[get_neuron_index(net, net.columns, row)] = r
+        end
+        modifiers = Dict()
+        for n in 1:net.row_counts[1]
+            modifiers[n] = [f, amplitude]
+        end
+        push!(b, Resonance(goals, modifiers))
     end
     return b
 end
@@ -86,7 +88,6 @@ end
         println(mean(ampli))
         push!(data, mean(ampli))
     end
-
 
     return frequencies, data
 end=#
