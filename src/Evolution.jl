@@ -109,16 +109,15 @@ function train!(
 ) where {T<:Behaviour}
     loss = calc_loss(network, sim, behaviours)
     spring_data = get_spring_constants_vec(network)
-
+    loss_function! = opt.parallel ? calc_losses_parallel! : calc_losses!
     for _ in 1:epochs
         # TODO: check if pop size ever changes; if no, no need to allocate new
         # vector every time
         losses = Vector{Float64}(undef, length(opt.candidates))
         for i in eachindex(opt.candidates)
             opt.candidates[i] = mutation(opt.candidates[i], opt.mutation_strength)
-            set_spring_data!(network, opt.candidates[i])
-            losses[i] = calc_loss(network, sim, behaviours)
         end
+        loss_function!(network, opt.candidates, losses, behaviours, sim)
 
         index = sortperm(losses)
         if losses[index[1]] < loss

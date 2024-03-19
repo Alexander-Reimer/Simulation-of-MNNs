@@ -107,7 +107,7 @@ abstract type Optimization end
 abstract type Simulation end
 
 mutable struct Trainer
-    behaviours::Vector{T} where T <: Behaviour
+    behaviours::Vector{T} where {T<:Behaviour}
     simulation::Simulation
     optimization::Optimization
 end
@@ -370,7 +370,9 @@ function get_spring_constants_vec(network::Network)
     return spring_constants
 end
 
-function calc_loss(network::Network, sim::Simulation, behaviours::Vector{T}) where T<:Behaviour
+function calc_loss(
+    network::Network, sim::Simulation, behaviours::Vector{T}
+) where {T<:Behaviour}
     len = length(behaviours)
     len == 0 && throw(ArgumentError("`behaviours` can't be an empty vector"))
     l = 0
@@ -381,29 +383,17 @@ function calc_loss(network::Network, sim::Simulation, behaviours::Vector{T}) whe
 end
 
 function calc_losses!(
-    network,
-    candidates,
-    losses,
-    behaviours::Vector{Behaviour};
-    vis=nothing,
-    delta=0.01,
-    epochs=250,
-)
+    network, candidates, losses, behaviours::Vector{T}, sim::Simulation
+) where {T<:Behaviour}
     for i in eachindex(losses)
         set_spring_data!(network, candidates[i])
-        losses[i] = calc_loss(network, behaviours; vis=vis, delta=delta, epochs=epochs)
+        losses[i] = calc_loss(network, sim, behaviours)
     end
 end
 
 function calc_losses_parallel!(
-    network,
-    candidates,
-    losses,
-    behaviours::Vector{Behaviour};
-    vis=nothing,
-    delta=0.01,
-    epochs=250,
-)
+    network, candidates, losses, behaviours::Vector{T}, sim::Simulation
+) where {T<:Behaviour}
     candidate_is = [i for i in eachindex(candidates)]
     chunks = Iterators.partition(
         candidate_is, max(length(candidate_is) ÷ Threads.nthreads(), 1)
@@ -411,14 +401,18 @@ function calc_losses_parallel!(
     tasks = map(chunks) do i
         if length(i) == 1
             i = i[1]
-            Threads.@spawn calc_loss(
-                deepcopy($network), $(candidates[i]), behaviours, epochs=$epochs
-            )
+            Threads.@spawn begin
+                local_network = deepcopy($network)
+                set_spring_data!(local_network, candidates[i])
+                calc_loss(local_network, $sim, behaviours)
+            end
         else
             for j in i[1]:i[2]
-                Threads.@spawn calc_loss(
-                    deepcopy($network), $(candidates[j]), behaviours, epochs=$epochs
-                )
+                Threads.@spawn begin
+                    local_network = deepcopy($network)
+                    set_spring_data!(local_network, candidates[j])
+                    calc_loss(local_network, $sim, behaviours)
+                end
             end
         end
     end
