@@ -86,5 +86,5 @@ function train!(
         epochs == 0 && break
     end
     set_spring_data!(network, spring_data)
-    return nothing
+    return base_loss
 end

@@ -127,7 +127,7 @@ function train!(
         else
             opt.mutation_strength *= 0.95
         end
-        println(loss)
+        @info "Current best loss: $loss"
 
         next_gen = [zeros(length(spring_data)) for _ in 1:(opt.popsize)]
         next_gen[1:Int(floor(opt.popsize / 5))] = opt.candidates[index[1:Int(
@@ -139,7 +139,8 @@ function train!(
         opt.candidates = copy(next_gen)
         opt.epochs += 1
     end
-    return set_spring_data!(network, spring_data)
+    set_spring_data!(network, spring_data)
+    return loss
 end
 
 #TODO

@@ -56,11 +56,46 @@ function Base.convert(
     return Diff(x.time)
 end
 
+function Base.convert(::Type{Simulation}, x::NamedTuple)
+    return Diff(x.time)
+end
+
+function Base.convert(
+    ::Type{Simulation},
+    x::NamedTuple{
+        (:time, :modifier),
+        Tuple{
+            Int64,
+            NamedTuple{
+                (:behaviour,),
+                Tuple{
+                    NamedTuple{
+                        (:goals, :modifiers),
+                        Tuple{Dict{Int64,Float64},Dict{Int64,Vector{Float64}}},
+                    },
+                },
+            },
+        },
+    },
+)
+    return Diff(x.time)
+end
+
 function Base.convert(
     ::Type{Optimization},
     x::NamedTuple{
         (:initialized, :init, :increment, :selected, :epochs),
         Tuple{Bool,Float64,Float64,Set{Int64},Int64},
+    },
+)
+    return PPS(x.initialized, x.init, x.increment, x.selected, x.epochs)
+end
+
+function Base.convert(
+    ::Type{Optimization},
+    x::NamedTuple{
+        (:initialized, :init, :increment, :selected, :epochs),
+        Tuple{Bool,Float64,Float64,Set{Missing},Int64},
     },
 )
     return PPS(x.initialized, x.init, x.increment, x.selected, x.epochs)
