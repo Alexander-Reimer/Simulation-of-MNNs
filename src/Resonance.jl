@@ -1,6 +1,6 @@
 mutable struct Resonance <: Behaviour
-    goals::Dict{Int,Number}
-    modifiers::Dict{Int,Vector{Number}}
+    goals::Dict{Int,Float64}
+    modifiers::Dict{Int,Vector{Float64}}
 end
 
 function Resonance(net::Network, num_goals; amplitude=0.1)

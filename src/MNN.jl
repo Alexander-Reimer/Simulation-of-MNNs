@@ -23,6 +23,7 @@ using Observables # updating visualization
 using Random # UUIDs & setting rand seed
 using StaticArrays
 using Statistics # mean
+using Arrow # saving data
 # CairoMakie.activate!()
 
 """
@@ -107,7 +108,8 @@ abstract type Optimization end
 abstract type Simulation end
 
 mutable struct Trainer
-    behaviours::Vector{T} where {T<:Behaviour}
+    # behaviours::Vector{T} where {T<:Behaviour} # remove to avoid serialization bug?
+    behaviours::Vector{Behaviour}
     simulation::Simulation
     optimization::Optimization
 end
@@ -141,6 +143,7 @@ include("Evolution.jl")
 include("Backpropagation.jl")
 include("Resonance.jl")
 include("Deformation.jl")
+include("DataHandling.jl")
 
 function print_graph(network::Network)
     for col in 1:(network.columns)
