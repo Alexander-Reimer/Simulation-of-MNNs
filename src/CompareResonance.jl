@@ -51,7 +51,7 @@ function main()
     global lk = ReentrantLock()
     epochs_pps = 1000
     # epochs_evolution = 200
-    network_number = 3
+    network_number = 10
     number_goals = 3
     try
         @sync for _ in 1:network_number
@@ -124,7 +124,7 @@ end
 
 function show_results(df)
     max_epochs = maximum(df.epochs)
-    df = filter(:epochs => ==(max_epochs), df)
+    df = filter(:epochs => ==(1000), df)
     fig = Figure()
     ax = Axis(fig[1, 1])
     for row in eachrow(df)
