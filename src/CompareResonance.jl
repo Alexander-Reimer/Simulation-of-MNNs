@@ -145,8 +145,10 @@ end
 
 function fix(filepath)
     df = load(filepath)
+    rm(filepath)
     Arrow.write(filepath, df; maxdepth=7)
-    return
+    df = nothing
+    return nothing
 end
 
 function fix()

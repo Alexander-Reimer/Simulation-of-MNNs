@@ -10,7 +10,7 @@ end
 
 function serialize(network::Network)
     return NetworkSerialized(
-        network.rows, network.columns, get_spring_constants_vec(network)
+        network.columns, network.rows, get_spring_constants_vec(network)
     )
 end
 
@@ -99,6 +99,16 @@ function Base.convert(
     },
 )
     return PPS(x.initialized, x.init, x.increment, x.selected, x.epochs)
+end
+
+function Base.convert(
+    ::Type{Optimization},
+    x::NamedTuple{
+        (:parallel, :mutation_strength, :popsize, :candidates, :epochs),
+        Tuple{Bool,Float64,Int64,Vector{Vector{Float64}},Int64},
+    },
+)
+    return Evolution(x.parallel, x.mutation_strength, x.popsize, x.candidates, x.epochs)
 end
 
 ArrowTypes.arrowname(::Type{Diff}) = :Diff
