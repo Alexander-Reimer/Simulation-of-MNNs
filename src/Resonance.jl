@@ -3,10 +3,10 @@ mutable struct Resonance <: Behaviour
     modifiers::Dict{Int,Vector{Float64}}
 end
 
-function Resonance(net::Network, num_goals; amplitude=0.1)
+function Resonance(net::Network, num_goals; amplitude=0.2)
     b = Vector{Resonance}()
     for i in 1:num_goals
-        r = rand() / 4
+        r = rand() / 2
         f = num_goals == 1 ? 1.0 : 1.0 + (2.0 * (i - 1) / (num_goals - 1))
         goals = Dict()
         for row in 1:net.row_counts[end]
@@ -104,7 +104,7 @@ end
 
 function calculate_resonance_curve(network::Network, frequencies, amplitude, neuron)
     amplitudes = Vector{Float64}(undef, length(frequencies))
-    sim = Diff(500, (network, acc, t) -> nothing)
+    sim = Diff(200, (network, acc, t) -> nothing)
     for i in eachindex(frequencies)
         f = frequencies[i]
         mods = Dict()

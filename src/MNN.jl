@@ -10,7 +10,9 @@ export Network,
     Evolution,
     get_user_behaviour,
     Diff,
-    Euler
+    Euler,
+    Resonance,
+    Deformation
 
 using AngleBetweenVectors
 using CairoMakie # visualization (pdf-capable backend)

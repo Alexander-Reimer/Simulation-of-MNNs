@@ -1,10 +1,12 @@
 module CompareResonance
-using MNN
 using DataFrames, CSV # for writing to csv
 using Dates # for timestamp
 using UUIDs # for uuid1
 using Random # for setting random seed
 using Arrow # for writing to Arrow
+using GLMakie # for plotting
+using Revise
+using MNN
 
 function create_df()
     df = DataFrame(;
@@ -33,21 +35,11 @@ function save_df(df)
     return Arrow.write(filepath, df; maxdepth=7)
 end
 
-function make_entry(net, trainer, num_goals_resonance, loss, id)
+function make_entry(net, trainer, num_goals_resonance, loss, id, epochs)
     lock(lk)
     push!(
         df,
-        (
-            now(),
-            id,
-            trainer.optimization.epochs,
-            net.rows,
-            net.columns,
-            num_goals_resonance,
-            net,
-            trainer,
-            loss,
-        ),
+        (now(), id, epochs, net.rows, net.columns, num_goals_resonance, net, trainer, loss),
     )
     save_df(df)
     unlock(lk)
@@ -57,21 +49,34 @@ end
 function main()
     global df = create_df()
     global lk = ReentrantLock()
-    epochs = 1000
-    network_number = 10
+    epochs_pps = 1000
+    # epochs_evolution = 200
+    network_number = 3
     number_goals = 3
-    @sync for _ in 1:network_number
-        Threads.@spawn begin
-            id = uuid1()
-            Random.seed!(id.value)
-            net = Network(11, 4)
-            b = MNN.Resonance(net, 3)
-            t = Trainer(b, Diff(100), PPS())
-            for _ in 1:(epochs / 20)
-                loss = train!(net, 20, t)
-                make_entry(net, t, number_goals, loss, id)
+    try
+        @sync for _ in 1:network_number
+            Threads.@spawn begin
+                id = uuid1()
+                Random.seed!(id.value)
+                net = Network(11, 4)
+                b = MNN.Resonance(net, 3)
+                t = Trainer(b, Diff(200), PPS())
+                epochs = 0
+                for _ in 1:(epochs_pps / 20)
+                    loss = train!(net, 20, t)
+                    epochs += 20
+                    make_entry(net, t, number_goals, loss, id, epochs)
+                end
+                # t.optimization = Evolution(net)
+                # for _ in 1:(epochs_evolution / 20)
+                #     loss = train!(net, 20, t)
+                #     epochs += 20
+                #     make_entry(net, t, number_goals, loss, id, epochs)
+                # end
             end
         end
+    catch e
+        println(e)
     end
 end
 
@@ -101,6 +106,57 @@ function load()
         end
     end
     return load("src/data/ResonanceCurveOptimization/" * newest)
+end
+
+function get_resonance_curve(net::Network, b::Resonance, frqs)
+    neurons = collect(keys(b.goals))
+    amplitude = b.modifiers[1][2]
+    amps = MNN.calculate_resonance_curve(net, frqs, amplitude, neurons[1])
+    for n in neurons[2:end]
+        amps .+= MNN.calculate_resonance_curve(net, frqs, amplitude, n)
+    end
+    return amps ./ length(neurons)
+end
+
+function get_resonance_curve(net::Network, trainer::Trainer, step=0.5)
+    return get_resonance_curve(net, trainer.behaviours[1], 0.0:step:3.5)
+end
+
+function show_results(df)
+    max_epochs = maximum(df.epochs)
+    df = filter(:epochs => ==(max_epochs), df)
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    for row in eachrow(df)
+        net = row.network
+        trainer = row.trainer
+        amps = get_resonance_curve(net, trainer, 1)
+        lines!(ax, 0.0:1.0:3.5, amps)
+        xs = Float64[]
+        ys = Float64[]
+        for b in trainer.behaviours
+            push!(xs, collect(values(b.modifiers))[1][1])
+            push!(ys, collect(values(b.goals))[1][1])
+        end
+        scatter!(xs, ys)
+    end
+    return fig
+end
+
+function fix(filepath)
+    df = load(filepath)
+    Arrow.write(filepath, df; maxdepth=7)
+    return
+end
+
+function fix()
+    files = filter(
+        x -> length(x) > 15 && x[1:15] == "ResonanceEpochs",
+        readdir("src/data/ResonanceCurveOptimization/"),
+    )
+    for file in files
+        fix("src/data/ResonanceCurveOptimization/" * file)
+    end
 end
 
 end
