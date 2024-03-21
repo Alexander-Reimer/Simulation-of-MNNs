@@ -51,10 +51,10 @@ macro init_net()
     ex = quote
         id = uuid1()
         Random.seed!(id.value)
-        # found through experimentation; this ensures that create_behaviours isn't caught in
+        # found through experimentation; this ensures that create_deformation_behaviours isn't caught in
         # infinite loop trying to get suffucuently distant vectors
         min_angle = num_behaviours <= 1 ? 0 : π / (num_behaviours + 0)
-        net = MNN.Network(columns, rows)
+        net = Network(columns, rows)
     end
     return esc(ex)
 end
@@ -73,7 +73,7 @@ end
 macro trainer(opt)
     ex = quote
         t = Trainer(
-            MNN.create_behaviours(
+            MNN.create_deformation_behaviours(
                 net,
                 num_behaviours;
                 min_angle=min_angle,
@@ -313,7 +313,7 @@ function get_start_mutation_strengths(df_e, df)
     return result
 end
 
-function resonance_test(net=nothing, t=nothing; start_epochs = 0)
+function resonance_test(net=nothing, t=nothing; start_epochs=0)
     df = DataFrame(;
         time=DateTime[],
         epochs=Int64[],
@@ -350,7 +350,7 @@ function resonance_test(net=nothing, t=nothing; start_epochs = 0)
             [r1, r2, r3],
             Diff(200),
             # PPS(),
-            Evolution(net)
+            Evolution(net),
         )
         # t.optimization.initialized = true
         t.optimization.mutation_strength = 0.1
