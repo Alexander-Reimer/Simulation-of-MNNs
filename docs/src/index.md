@@ -37,7 +37,7 @@ Anwendungsmöglichkeiten.
 
 Open the Julia REPL, then
 
-```julia
+```
 julia> # type ] to open package manager
 
 pkg> add https://github.com/Alexander-Reimer/Simulation-of-MNNs
