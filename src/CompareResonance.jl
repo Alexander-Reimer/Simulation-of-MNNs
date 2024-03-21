@@ -123,15 +123,19 @@ function get_resonance_curve(net::Network, trainer::Trainer, step=0.5)
 end
 
 function show_results(df)
+    global amps_res = []
+    global xs_res = []
+    global ys_res = []
     max_epochs = maximum(df.epochs)
-    df = filter(:epochs => ==(1000), df)
+    df = filter(:epochs => ==(max_epochs), df)
     fig = Figure()
     ax = Axis(fig[1, 1])
-    for row in eachrow(df)
+    Threads.@threads for row in eachrow(df)
         net = row.network
         trainer = row.trainer
-        amps = get_resonance_curve(net, trainer, 1)
-        lines!(ax, 0.0:1.0:3.5, amps)
+        amps = get_resonance_curve(net, trainer, 0.25)
+        push!(amps_res, amps)
+        lines!(ax, 0.0:0.25:3.5, amps)
         xs = Float64[]
         ys = Float64[]
         for b in trainer.behaviours
@@ -139,6 +143,8 @@ function show_results(df)
             push!(ys, collect(values(b.goals))[1][1])
         end
         scatter!(xs, ys)
+        push!(xs_res, xs)
+        push!(ys_res, ys)
     end
     return fig
 end
