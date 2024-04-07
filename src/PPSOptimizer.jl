@@ -6,9 +6,10 @@ mutable struct PPS <: Optimization
     selected::Set
     # new_spring_data::Dict{Tuple{Int64,Int64},Spring}
     epochs::Int
+    positive_only::Bool
 end
 
-PPS() = PPS(false, 1.15, 1.0, Set(), 0)
+PPS() = PPS(false, 1.15, 1.0, Set(), 0, false)
 PPS(net::Network) = PPS()
 
 function select_spring(spring_data, selected::Set)
@@ -59,6 +60,9 @@ function train!(
             continue
         end
         spring = new_spring_data[i]
+        if opt.positive_only && opt.increment < 0 && spring <= -opt.increment
+            continue
+        end
         spring = opt.increment + spring
         new_spring_data[i] = spring
 
