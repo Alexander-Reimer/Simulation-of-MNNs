@@ -12,7 +12,8 @@ export Network,
     Diff,
     Euler,
     Resonance,
-    Deformation
+    Deformation,
+    create_deformation_behaviours
 
 using AngleBetweenVectors
 using CairoMakie # visualization (pdf-capable backend)

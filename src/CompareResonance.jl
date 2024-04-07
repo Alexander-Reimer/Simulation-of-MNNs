@@ -130,7 +130,7 @@ function show_results(df)
     df = filter(:epochs => ==(max_epochs), df)
     fig = Figure()
     ax = Axis(fig[1, 1])
-    Threads.@threads for row in eachrow(df)
+    for row in eachrow(df)
         net = row.network
         trainer = row.trainer
         amps = get_resonance_curve(net, trainer, 0.25)
@@ -146,7 +146,7 @@ function show_results(df)
         push!(xs_res, xs)
         push!(ys_res, ys)
     end
-    return fig
+    return amps_res, xs_res, ys_res, fig
 end
 
 function fix(filepath)
@@ -166,5 +166,26 @@ function fix()
         fix("src/data/ResonanceCurveOptimization/" * file)
     end
 end
+
+function save_amps_res(df, indices, amps_res)
+    res_df = DataFrame(:frequencies => 0.0:0.25:3.5)
+    for i in indices
+        uuid = df[i, :uuid]
+        colname = Symbol("amplitude" * string(uuid)[end-3:end])
+        res_df[!, colname] = amps_res[i]
+    end
+    return res_df
+end
+
+function save_goal_amplitudes(df, indices, xs_res, ys_res)
+    res_df = DataFrame(:frequencies => xs_res[1])
+    for i in indices
+        uuid = df[i, :uuid]
+        colname = Symbol("goal_amplitude_" * string(uuid)[end-3:end])
+        res_df[!, colname] = ys_res[i]
+    end
+    return res_df
+end
+
 
 end
