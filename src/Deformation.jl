@@ -1,18 +1,30 @@
+
+"""
+    mutable struct Deformation <: Behaviour
+
+A deformation behaviour for the MNN to learn.
+
+# Fields
+
+- `goals`: A dictionary with the goal positions of the neurons. Each key is a neuron index
+ with the value being a vector of the goal coordinates ([x, y]). If `relative` is `true`,
+ then the coordinates will be interpreted as relative to the initial coordinates of the
+ neurons, meaning as vector from the initial position, otherwise they will be interpreted as
+ absolute coordinates.
+- `relative`: A boolean indicating whether the goal coordinates are relative or absolute.
+- `modifiers`: A dictionary with the modifiers for the neurons. Each key is a neuron index
+ with the value being a vector of the accelerations (`[x, y]`) which will be added to the
+ velocity of the respective neuron continuously during the simulation,
+
+# Examples
+
+
+
+"""
 mutable struct Deformation <: Behaviour
     goals::Dict{Int,Vector{Number}}
     relative::Bool
     modifiers::Dict{Int,Vector{Number}}
-end
-
-function create_deformation_unmoving(network::Network)
-    col = network.columns
-    rows = network.row_counts[col]
-    goals = Dict{Int,Vector{Number}}()
-    for row in 1:rows
-        neuron_i = get_neuron_index(network, col, row)
-        goals[neuron_i] = [0.0, 0.0]
-    end
-    return Behaviour(goals, true, Dict())
 end
 
 function random_distanced_vector(others, m, min_angle)
