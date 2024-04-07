@@ -478,8 +478,8 @@ Get deformation behaviour using GUI. Left click on a neuron (first or last colum
 it, then release left mouse button and move mouse pointer to move the other end of the goal
 / force vector. Click left mouse button again to confirm.
 
-If you have set all force and goal vectors you want, press space to finish. The function will
-then return a [`MNN.Behaviour`](@ref) object.
+If you have set all force and goal vectors you want, press space to finish. The function
+will then return a [`MNN.Deformation`](@ref) object.
 """
 function get_user_behaviour(network::Network)
     reset!(network)
