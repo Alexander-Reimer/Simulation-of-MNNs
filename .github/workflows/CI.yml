@@ -43,11 +43,14 @@ jobs:
       # see https://github.com/MakieOrg/Makie.jl/blob/master/.github/workflows/glmakie.yaml
       - name: Run the tests
         id: referencetests
-        continue-on-error: true
         run: >
           DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=. -e 'using Pkg; Pkg.test("MNN", coverage=true)'
-      - uses: julia-actions/julia-processcoverage@v1
+      - name: Process coverage results
+        # https://stackoverflow.com/a/58859404
+        if: '!cancelled()'
+        uses: julia-actions/julia-processcoverage@v1
       - name: Upload coverage reports to Codecov
+        if: '!cancelled()'
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
