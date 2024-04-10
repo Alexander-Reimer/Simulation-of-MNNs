@@ -1,3 +1,6 @@
+"""
+    mutable struct Diff <: Simulation
+"""
 mutable struct Diff <: Simulation
     time::Number
     modifier::Function

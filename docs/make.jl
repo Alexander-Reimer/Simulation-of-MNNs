@@ -13,13 +13,22 @@ makedocs(;
         canonical="https://Alexander-Reimer.github.io/Simulation-of-MNNs",
         edit_link="main",
         assets=String[],
+        repolink="https://github.com/Alexander-Reimer/Simulation-of-MNNs"
     ),
     pages=[
         "Home" => "index.md",
-    ],
+        "Manual" => Any[
+            "Guide"=>"man/guide.md",
+            "man/customize-simulation.md",
+        ],
+        "Reference" => Any[
+            "Public API"=>"lib/public.md",
+            "Internals"=>"lib/internals.md",
+        ],
+    ]
 )
 
 deploydocs(;
     repo="github.com/Alexander-Reimer/Simulation-of-MNNs",
-    devbranch="main",
+    devbranch="main"
 )

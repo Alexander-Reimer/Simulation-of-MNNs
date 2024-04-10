@@ -1,2 +1,2 @@
 # using https://github.com/tlienart/LiveServer.jl/#serve-docs
-julia --project=docs -e 'using MNN, LiveServer; servedocs()'
+julia --project=docs -ie 'using Revise, MNN, LiveServer; servedocs()'

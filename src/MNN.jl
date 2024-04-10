@@ -1,5 +1,11 @@
 module MNN
 
+const PUBLIC = [Network, Visualizer, simulate!, get_user_behaviour]
+
+for i in PUBLIC
+    export i
+end
+
 export Network,
     simulate!,
     Trainer,
@@ -108,6 +114,12 @@ abstract type Behaviour end
 
 abstract type Optimization end
 
+"""
+    abstract type Simulation
+
+Inherit from this type to implement your own simulation method. Your Simulation type should
+have a field `modifier::Function` (see )
+"""
 abstract type Simulation end
 
 mutable struct Trainer
