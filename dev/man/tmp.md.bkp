@@ -1,0 +1,49 @@
+<!-- ## Installation
+
+Open the Julia REPL, then
+
+```
+julia> # type ] to open package manager
+
+pkg> add https://github.com/Alexander-Reimer/Simulation-of-MNNs
+```
+
+This should install the MNN package and all dependencies automatically.
+
+### NixOS
+
+When using NixOS, activating the development shell is necessary to make GLMakie work:
+
+```bash
+cd /path/to/this/project
+nix-shell .
+```
+
+## Usage
+
+To use MNN.jl in you project, you should first import it with
+
+```julia
+using MNN
+```
+
+You can then create your first MNN (see [`MNN.get_user_behaviour`](@ref) for
+instructions on how to use the GUI):
+
+```julia
+# create a MNN  with 5 columns and 4 rows
+net = Network(5, 4) 
+# show the network
+vis = Visualizer(net)
+# create a behaviour to simulate using a GUI
+b = get_user_behaviour(network::Network)
+# simulate network with forces determined by b applied for 500 time steps
+simulate!(net, Diff(500), b, vis = vis)
+```
+
+```@index
+```
+
+```@autodocs
+Modules = [MNN]
+``` -->
