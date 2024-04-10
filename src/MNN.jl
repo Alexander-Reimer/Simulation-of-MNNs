@@ -1,11 +1,5 @@
 module MNN
 
-const PUBLIC = [Network, Visualizer, simulate!, get_user_behaviour]
-
-for i in PUBLIC
-    export i
-end
-
 export Network,
     simulate!,
     Trainer,
