@@ -80,7 +80,7 @@ macro trainer(opt)
                 m_goal=mag_goals,
                 m_mod=mag_modifier,
             ),
-            MNN.Diff(sim_time),
+            MNN.SecondOrderDiff(sim_time),
             $opt(net),
         )
         if $opt <: MNN.Evolution
@@ -348,7 +348,7 @@ function resonance_test(net=nothing, t=nothing; start_epochs=0)
         )
         t = MNN.Trainer(
             [r1, r2, r3],
-            Diff(200),
+            SecondOrderDiff(200),
             # PPS(),
             Evolution(net),
         )
@@ -389,7 +389,7 @@ function resonance_test2()
     freqss = []
     Threads.@threads for i in 1:1
         b = MNN.Resonance(2)
-        net, amp, t, freqs = resonance_test(nothing, MNN.Trainer(b, Diff(500), PPS()))
+        net, amp, t, freqs = resonance_test(nothing, MNN.Trainer(b, SecondOrderDiff(500), PPS()))
         push!(nets, net)
         push!(amps, amp)
         push!(ts, t)
@@ -409,7 +409,7 @@ function test_influence_frequency()
             Dict(36 => 0.2, 37 => 0.2, 38 => 0.2),
             Dict(1 => [f, 0.1], 2 => [f, 0.1], 3 => [f, 0.1]),
         )
-        net, amp, t, freqs = resonance_test(nothing, MNN.Trainer([b], Diff(500), PPS()))
+        net, amp, t, freqs = resonance_test(nothing, MNN.Trainer([b], SecondOrderDiff(500), PPS()))
         push!(nets, net)
         push!(amps, amp)
         push!(ts, t)

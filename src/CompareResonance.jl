@@ -60,7 +60,7 @@ function main()
                 Random.seed!(id.value)
                 net = Network(11, 4)
                 b = MNN.Resonance(net, 3)
-                t = Trainer(b, Diff(200), PPS())
+                t = Trainer(b, SecondOrderDiff(200), PPS())
                 epochs = 0
                 for _ in 1:(epochs_pps / 20)
                     loss = train!(net, 20, t)

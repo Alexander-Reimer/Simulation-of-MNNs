@@ -1,11 +1,11 @@
 """
-    mutable struct Diff <: Simulation
+    mutable struct SecondOrderDiff <: Simulation
 """
-mutable struct Diff <: Simulation
+mutable struct SecondOrderDiff <: Simulation
     time::Number
     modifier::Function
 end
-Diff(time::Number) = Diff(time, (network, accelerations, t) -> nothing)
+SecondOrderDiff(time::Number) = SecondOrderDiff(time, (network, accelerations, t) -> nothing)
 
 springforce(x, k) = -x * (k + x * x)
 
@@ -43,7 +43,7 @@ function simulation_step(accelerations, velocities, positions, p, t)
     return modifier(network, accelerations, t)
 end
 
-function simulate!(network::Network, sim::Diff; vis::Union{Visualizer,Nothing}=nothing)
+function simulate!(network::Network, sim::SecondOrderDiff; vis::Union{Visualizer,Nothing}=nothing)
     p = (network, 0.2, sim.modifier)
     tspan = (0.0, sim.time)
     prob = SecondOrderODEProblem{true}(

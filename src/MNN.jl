@@ -9,7 +9,7 @@ export Network,
     PPS,
     Evolution,
     get_user_behaviour,
-    Diff,
+    SecondOrderDiff,
     Euler,
     Resonance,
     Deformation,
@@ -445,7 +445,7 @@ end
     simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
 
 Simulate network with given behaviour. Simulation method is determined by type of `sim`;
-currently [`MNN.Diff`](@ref) and [`MNN.Euler`](@ref) are implemented.
+currently [`MNN.SecondOrderDiff`](@ref) and [`MNN.Euler`](@ref) are implemented.
 
 To implement your own, you need to define a struct that is a subtype of
 [`MNN.Simulation`](@ref) and has the field `modifier::Function`. Then overload the function

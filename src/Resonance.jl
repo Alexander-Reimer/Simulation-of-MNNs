@@ -45,7 +45,7 @@ function calc_amplitude(neuron, integ, portion)
 end
 
 #TODO: implement for Euler
-# function calc_loss(network::Network, sim::Diff, behaviour::Resonance)
+# function calc_loss(network::Network, sim::SecondOrderDiff, behaviour::Resonance)
 #     reset!(network)
 #     integ = simulate!(network, sim, behaviour)
 #     # portion of the simulation to consider (0.2 --> last 20% of the simulation)
@@ -89,7 +89,7 @@ function find_closest_index(arr::AbstractArray, x::Number)
 end
 
 # note: te modifier frqeuencies of each Resonance behaviour need to be the same across input neurons
-function calc_loss(network::Network, sim::Diff, behaviours::Vector{T}) where {T<:Behaviour}
+function calc_loss(network::Network, sim::SecondOrderDiff, behaviours::Vector{T}) where {T<:Behaviour}
     @info "Correct func!"
     reset!(network)
     sim.modifier = (network, acc, t) -> MNN.resonate!(network, acc, behaviours, t)
@@ -126,7 +126,7 @@ function calc_loss(network::Network, sim::Diff, behaviours::Vector{T}) where {T<
 end
 
 function calc_res_curve(
-    network::Network, sim::Diff, behaviours::Vector{T}
+    network::Network, sim::SecondOrderDiff, behaviours::Vector{T}
 ) where {T<:Behaviour}
     @info "Correct func!"
     reset!(network)
@@ -205,7 +205,7 @@ end
 
 function calculate_resonance_curve(network::Network, frequencies, amplitude, neuron)
     amplitudes = Vector{Float64}(undef, length(frequencies))
-    sim = Diff(300, (network, acc, t) -> nothing)
+    sim = SecondOrderDiff(300, (network, acc, t) -> nothing)
     for i in eachindex(frequencies)
         f = frequencies[i]
         mods = Dict()
