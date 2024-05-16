@@ -26,6 +26,7 @@ using Observables # updating visualization
 using Random # UUIDs & setting rand seed
 using StaticArrays
 using Statistics # mean
+using FFTW
 using Arrow # saving data
 # CairoMakie.activate!()
 
