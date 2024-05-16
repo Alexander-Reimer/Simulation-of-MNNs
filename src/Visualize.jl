@@ -58,22 +58,24 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
     update_positions!(vis, network)
 
     spring_costants = get_spring_constants_vec(network)
-    max_color_dist = maximum(abs.((minimum(spring_costants), maximum(spring_costants))))
-    colorrange = (-max_color_dist, max_color_dist)
-    for (n1, n2) in edge_pairs
-        vis.observers[n1, n2, :xs] = Observable([neuron_xs.val[n1], neuron_xs.val[n2]])
-        throttle(1 / max_fps, vis.observers[n1, n2, :xs])
-        vis.observers[n1, n2, :ys] = Observable([neuron_ys.val[n1], neuron_ys.val[n2]])
-        throttle(1 / max_fps, vis.observers[n1, n2, :ys])
-        spring = network.graph.edge_data[n1, n2]
-        l = lines!(
-            vis.observers[n1, n2, :xs],
-            vis.observers[n1, n2, :ys];
-            color=spring.spring_constant,
-            # colormap=:diverging_bkr_55_10_c35_n256,
-            colormap=[:blue, :gray, :red],
-            colorrange=colorrange,
-        )
+    if !isempty(spring_costants)
+        max_color_dist = maximum(abs.((minimum(spring_costants), maximum(spring_costants))))
+        colorrange = (-max_color_dist, max_color_dist)
+        for (n1, n2) in edge_pairs
+            vis.observers[n1, n2, :xs] = Observable([neuron_xs.val[n1], neuron_xs.val[n2]])
+            throttle(1 / max_fps, vis.observers[n1, n2, :xs])
+            vis.observers[n1, n2, :ys] = Observable([neuron_ys.val[n1], neuron_ys.val[n2]])
+            throttle(1 / max_fps, vis.observers[n1, n2, :ys])
+            spring = network.graph.edge_data[n1, n2]
+            l = lines!(
+                vis.observers[n1, n2, :xs],
+                vis.observers[n1, n2, :ys];
+                color=spring.spring_constant,
+                # colormap=:diverging_bkr_55_10_c35_n256,
+                colormap=[:blue, :gray, :red],
+                colorrange=colorrange,
+            )
+        end
     end
 
     scatter!(neuron_xs, neuron_ys; marker=:circle, color=:black)
