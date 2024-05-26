@@ -1,22 +1,14 @@
 mutable struct Resonance <: Behaviour
-    goals::Dict{Int,Float64}
-    modifiers::Dict{Int,Vector{Float64}}
+    goals::Dict{Int,Number}
+    modifiers::Dict{Int,Vector{Number}}
 end
 
-function Resonance(net::Network, num_goals; amplitude=0.2)
+function Resonance(num_goals)
     b = Vector{Resonance}()
-    for i in 1:num_goals
-        r = rand() / 2
-        f = num_goals == 1 ? 1.0 : 1.0 + (2.0 * (i - 1) / (num_goals - 1))
-        goals = Dict()
-        for row in 1:net.row_counts[end]
-            goals[get_neuron_index(net, net.columns, row)] = r
-        end
-        modifiers = Dict()
-        for n in 1:net.row_counts[1]
-            modifiers[n] = [f, amplitude]
-        end
-        push!(b, Resonance(goals, modifiers))
+    for i =1:num_goals
+        r = rand()/4
+        f =  0.2+(1.8*(i-1)/(num_goals-1))
+        push!(b, Resonance(Dict(15=>r, 16=>r, 17=>r), Dict(1=>[f,0.1], 2=>[f, 0.1], 3=>[f, 0.1])) )
     end
     return b
 end
@@ -24,7 +16,7 @@ end
 function resonate!(network::Network, acc, modifiers, t)
     for (n, m) in modifiers
         f, a = m[1], m[2] # frequency and amplitude
-        acc[1, n] += sin(t * f / (2pi)) * a # only affects x component
+        acc[1, n] += sin(t * f * (2pi)) * a # only affects x component
     end
 end
 
@@ -45,7 +37,7 @@ function calc_loss(network::Network, sim::Diff, behaviour::Resonance)
     reset!(network)
     integ = simulate!(network, sim, behaviour)
     # portion of the simulation to consider (0.2 --> last 20% of the simulation)
-    portion = round(Int, integ.t / 2)
+    portion = round(Int, integ.t / 5)
     l = 0.0
     for (n, target_a) in behaviour.goals # neuron and target amplitude
         max_x = maximum(integ.sol.u[(end - portion):end]) do curr_solution
@@ -89,6 +81,7 @@ end
         push!(data, mean(ampli))
     end
 
+
     return frequencies, data
 end=#
 
@@ -104,7 +97,7 @@ end
 
 function calculate_resonance_curve(network::Network, frequencies, amplitude, neuron)
     amplitudes = Vector{Float64}(undef, length(frequencies))
-    sim = Diff(200, (network, acc, t) -> nothing)
+    sim = Diff(500, (network, acc, t) -> nothing)
     for i in eachindex(frequencies)
         f = frequencies[i]
         mods = Dict()
@@ -114,7 +107,7 @@ function calculate_resonance_curve(network::Network, frequencies, amplitude, neu
         sim.modifier = (network, acc, t) -> resonate!(network, acc, mods, t)
         reset!(network)
         integ = simulate!(network, sim)
-        amplitudes[i] = calc_amplitude(neuron, integ, round(Int, integ.t / 2))
+        amplitudes[i] = calc_amplitude(neuron, integ, round(Int, integ.t / 5))
     end
     return amplitudes
 end
