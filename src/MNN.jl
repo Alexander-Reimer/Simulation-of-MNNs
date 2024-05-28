@@ -94,7 +94,7 @@ abstract type Simulation end
 abstract type Network end
 
 
-mutable struct TestNetwork <: Network 
+mutable struct TestNetwork <: Network
     graph::MetaGraphsNext.MetaGraph
     rows::Int # how many rows fixed columns have
     row_counts::Array{Int,1}
@@ -140,7 +140,6 @@ function TestNetwork(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
 end
 
 include("SimulationDiff.jl")
-include("FirstOrderSimulationDiff.jl")
 include("SimulationEuler.jl")
 include("PPSOptimizer.jl")
 include("Evolution.jl")
