@@ -33,7 +33,7 @@ function calc_amplitude(neuron, integ, portion)
 end
 
 #TODO: implement for Euler
-function calc_loss(network::Network, sim::Diff, behaviour::Resonance)
+function calc_loss(network::Network, sim::SecondOrderDiff, behaviour::Resonance)
     reset!(network)
     integ = simulate!(network, sim, behaviour)
     # portion of the simulation to consider (0.2 --> last 20% of the simulation)
