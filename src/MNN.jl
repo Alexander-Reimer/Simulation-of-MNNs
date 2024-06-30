@@ -139,13 +139,13 @@ function TestNetwork(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
     )
 end
 
+include("Earthquake.jl")
 include("SimulationDiff.jl")
 include("SimulationEuler.jl")
 include("PPSOptimizer.jl")
 include("Evolution.jl")
 include("Backpropagation.jl")
 include("Resonance.jl")
-include("Earthquacke.jl")
 include("Deformation.jl")
 
 function print_graph(network::Network)
