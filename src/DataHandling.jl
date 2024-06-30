@@ -53,11 +53,11 @@ function Base.convert(
     ::Type{Simulation},
     x::NamedTuple{(:time, :modifier),Tuple{Int64,NamedTuple{(),Tuple{}}}},
 )
-    return Diff(x.time)
+    return SecondOrderDiff(x.time)
 end
 
 function Base.convert(::Type{Simulation}, x::NamedTuple)
-    return Diff(x.time)
+    return SecondOrderDiff(x.time)
 end
 
 function Base.convert(
@@ -78,7 +78,7 @@ function Base.convert(
         },
     },
 )
-    return Diff(x.time)
+    return SecondOrderDiff(x.time)
 end
 
 function Base.convert(
@@ -111,6 +111,6 @@ function Base.convert(
     return Evolution(x.parallel, x.mutation_strength, x.popsize, x.candidates, x.epochs)
 end
 
-ArrowTypes.arrowname(::Type{Diff}) = :Diff
-ArrowTypes.ArrowKind(::Type{Diff}) = ArrowTypes.StructKind()
-ArrowTypes.JuliaType(::Val{:Diff}) = Diff
+ArrowTypes.arrowname(::Type{SecondOrderDiff}) = :SecondOrderDiff
+ArrowTypes.ArrowKind(::Type{SecondOrderDiff}) = ArrowTypes.StructKind()
+ArrowTypes.JuliaType(::Val{:SecondOrderDiff}) = SecondOrderDiff

@@ -82,10 +82,10 @@ vis = nothing;
 ```
 
 ```@repl usageA
-simulate!(net, Diff(500), b, vis=vis)
+simulate!(net, SecondOrderDiff(500), b, vis=vis)
 reset!(net, vis = visB); # hide
 MNN.GLMakie.record(visB.fig, "usageA_simulationBefore.mp4", 1:70) do i # hide
-    simulate!(net, MNN.Diff(3), b, vis = visB) # hide
+    simulate!(net, MNN.SecondOrderDiff(3), b, vis = visB) # hide
 end; # hide
 ```
 
@@ -105,7 +105,7 @@ the set goal (except if you got really, really, really lucky).
 To optimize the spring constants, we need a `Trainer` object:
 
 ```@repl usageA
-t = Trainer([b], Diff(500), PPS())
+t = Trainer([b], SecondOrderDiff(500), PPS())
 ```
 
 **Training:**
@@ -132,10 +132,10 @@ vis = Visualizer(net, behaviour=b); # update visualization of spring constants
 visB = vis # hide
 vis = nothing # hide
 reset!(net, vis=vis) # reset neuron positions
-simulate!(net, Diff(500), b, vis=vis)
+simulate!(net, SecondOrderDiff(500), b, vis=vis)
 reset!(net, vis = visB); # hide
 MNN.GLMakie.record(visB.fig, "usageA_simulationAfter.mp4", 1:70) do i # hide
-    simulate!(net, MNN.Diff(3), b, vis = visB) # hide
+    simulate!(net, MNN.SecondOrderDiff(3), b, vis = visB) # hide
 end; # hide
 ```
 
