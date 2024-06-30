@@ -14,24 +14,26 @@ mutable struct SecondOrderDiff <: Simulation
     time::Number
     modifier::Function
 end
-SecondOrderDiff(time::Number) = SecondOrderDiff(time, (network, accelerations, t) -> nothing)
+function SecondOrderDiff(time::Number)
+    return SecondOrderDiff(time, (network, accelerations, t) -> nothing)
+end
 
 springforce(x, k) = -x * (k + x * x)
 
 function simulation_step_first_order(du, d, p, t)
     (network, gam, modifier) = p
-    positions = d[:,:,1]
-    velocities = d[:,:,2]
-    du[:,:,1] = velocities
+    positions = d[:, :, 1]
+    velocities = d[:, :, 2]
+    du[:, :, 1] = velocities
     om = modifier()
     # add acceleration to velocities of first neuron in every column
-    [du[:,i,1] += [sin(t*om)*om*0.2,0] for i in 1:network.columns]
+    [du[:, i, 1] += [sin(t * om) * om * 0.2, 0] for i in 1:(network.columns)]
 
     graph = network.graph
-    force = [0.0,0.0]
+    force = [0.0, 0.0]
 
     for neuron in vertices(graph)
-        if graph[neuron].movable  # is movable
+        if graph[neuron].movable # is movable
             force = [0.0, 0.0]
 
             for neighbor in neighbors(graph, neuron)
@@ -45,11 +47,14 @@ function simulation_step_first_order(du, d, p, t)
                 end
                 force += diff / dist
             end
-            force -= gam * velocities[:,neuron] # damping
+            force -= gam * velocities[:, neuron] # damping
             force[2] -= 0.05 #gravity
-
-            du[:,neuron,2] = force
-
+            # prevent neurons from going below ground
+            if positions[2, neuron] < 1.0
+                force[2] = 0.0
+                du[2, neuron, 1] = 0.0
+            end
+            du[:, neuron, 2] = force
         end
     end
 end
@@ -88,14 +93,14 @@ function simulation_step_second_order(accelerations, velocities, positions, p, t
     return modifier(network, accelerations, t)
 end
 
-function simulate!(network::Network, sim::FirstOrderDiff; vis::Union{Visualizer,Nothing}=nothing)
+function simulate!(
+    network::House, sim::FirstOrderDiff; vis::Union{Visualizer,Nothing}=nothing
+)
     p = (network, 0.2, sim.modifier)
     tspan = (0.0, sim.time)
 
-    u = cat(network.positions, zeros(size(network.positions)),dims=(3))
-    prob = ODEProblem(
-        simulation_step_first_order, u, tspan, p
-    )
+    u = cat(network.positions, zeros(size(network.positions)); dims=(3))
+    prob = ODEProblem(simulation_step_first_order, u, tspan, p)
     if vis === nothing
         integrator = init(prob, AutoTsit5(Rosenbrock23()))
     else
@@ -109,21 +114,14 @@ function simulate!(network::Network, sim::FirstOrderDiff; vis::Union{Visualizer,
             # @info "t: $(integ.t)"
             sleep(integ.dt / 100)
         end
-        # TODO: maximum?
-        # mean_pos_change = sum(abs, integ.u.x[2] .- integ.uprev.x[2]) / length(integ.u.x[2])
-        # mean_velocity = sum(abs, integ.u.x[1]) / length(integ.u.x[1])
-        # if integ.t > 5 && mean_pos_change < 1.5e-5 && mean_velocity < 1.5e-5
-        #     @info "Early break at: $(integ.t)s"
-        #     break
-        # end
     end
     # network.positions = integrator.sol.u[end].x[2]
     return integrator
-    # return sol
 end
 
-
-function simulate!(network::Network, sim::SecondOrderDiff; vis::Union{Visualizer,Nothing}=nothing)
+function simulate!(
+    network::Network, sim::SecondOrderDiff; vis::Union{Visualizer,Nothing}=nothing
+)
     p = (network, 0.2, sim.modifier)
     tspan = (0.0, sim.time)
     prob = SecondOrderODEProblem{true}(
