@@ -39,7 +39,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
     throttle(1 / max_fps, neuron_ys)
     edge_pairs = collect(keys(network.graph.edge_data))
 
-    fig = Figure()
+    fig = Figure(; size=(1920, 1080))
     ax = Axis(
         fig[1, 1];
         aspect=DataAspect(),
@@ -57,15 +57,55 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
 
     update_positions!(vis, network)
 
-    for (n1, n2) in edge_pairs
-        vis.observers[n1, n2, :xs] = Observable([neuron_xs.val[n1], neuron_xs.val[n2]])
-        throttle(1 / max_fps, vis.observers[n1, n2, :xs])
-        vis.observers[n1, n2, :ys] = Observable([neuron_ys.val[n1], neuron_ys.val[n2]])
-        throttle(1 / max_fps, vis.observers[n1, n2, :ys])
-        l = lines!(vis.observers[n1, n2, :xs], vis.observers[n1, n2, :ys]; color=:grey)
+    spring_costants = get_spring_constants_vec(network)
+    if !isempty(spring_costants) # networks withput connections are possible
+        max_color_dist = maximum(abs.((minimum(spring_costants), maximum(spring_costants))))
+        colorrange = (-max_color_dist, max_color_dist)
+        for (n1, n2) in edge_pairs
+            vis.observers[n1, n2, :xs] = Observable([neuron_xs.val[n1], neuron_xs.val[n2]])
+            throttle(1 / max_fps, vis.observers[n1, n2, :xs])
+            vis.observers[n1, n2, :ys] = Observable([neuron_ys.val[n1], neuron_ys.val[n2]])
+            throttle(1 / max_fps, vis.observers[n1, n2, :ys])
+            spring = network.graph.edge_data[n1, n2]
+            l = lines!(
+                vis.observers[n1, n2, :xs],
+                vis.observers[n1, n2, :ys];
+                color=spring.spring_constant,
+                # colormap=:diverging_bkr_55_10_c35_n256,
+                colormap=[:blue, :gray, :red],
+                colorrange=colorrange,
+            )
+        end
     end
 
     scatter!(neuron_xs, neuron_ys; marker=:circle, color=:black)
+
+    # draw thick lines for fixed rows top und bottom
+    if network isa TestNetwork
+        first_col = network.columns + 1
+        last_col = 0
+        for col in 1:(network.columns)
+            if network.col_fixed[col]
+                if col < first_col
+                    first_col = col
+                end
+                if col > last_col
+                    last_col = col
+                end
+            end
+        end
+
+        for row in [1, network.rows]
+            n1 = get_neuron_index(network, first_col, row)
+            n2 = get_neuron_index(network, last_col, row)
+            lines!(
+                [neuron_xs.val[n1], neuron_xs.val[n2]],
+                [neuron_ys.val[n1], neuron_ys.val[n2]];
+                color=:black,
+                linewidth=3,
+            )
+        end
+    end
 
     if behaviour !== nothing
         for (n, coords) in behaviour.goals
@@ -106,7 +146,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
         end
     end
     hidedecorations!(ax)
-    resize_to_layout!(fig)
+    # resize_to_layout!(fig)
     display(fig)
     return vis
 end
