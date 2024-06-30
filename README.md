@@ -50,6 +50,5 @@ aware, the first to describe such Mechanical Neural Networks. Ntwork.
 
 For detailed papers (only in German), see the [paper branch on
 GitHub](https://github.com/Alexander-Reimer/Simulation-of-MNNs/tree/paper). The
-most recent one available is from our participation at the state-level
-competition in Lower Saxony:
-[paper.pdf](https://github.com/Alexander-Reimer/Simulation-of-MNNs/blob/paper/2024/JuFo_Niedersachsen/main.pdf)
+most recent one available is from our participation on the national level:
+[paper.pdf](https://github.com/Alexander-Reimer/Simulation-of-MNNs/blob/paper/2024/JuFo_bundesweit/main.pdf)
