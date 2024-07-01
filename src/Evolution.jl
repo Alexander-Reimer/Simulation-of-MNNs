@@ -1,41 +1,20 @@
 using Evolutionary
 
-@enum Sign positive = 1 negative = -1
-switch(sign::Sign) = sign == positive ? negative : positive
-name(sign::Sign) = sign == positive ? "positive" : "negative"
-
 mutable struct Evolution <: Optimization
     parallel::Bool
     mutation_strength::Float64
-    mutation_strength_delta::Float64
-    mutation_strength_sign::Sign
     popsize::Int
     candidates::Vector{Vector{Float64}}
-    epochs::Int
-    loss_history::Vector{Float64}
-    loss_length::Int
-    plateau_delta_max::Float64
+    simepochs::Int
 end
 
 function Evolution(net::Network)
-    parallel = true
     spring_data = get_spring_constants_vec(net)
     popsize = 10
-    epochs = 0
-    mutation_strength = 0.01
+    simepochs = 500
+    mutation_strength = 0.00005
     candidates = [mutation(spring_data, mutation_strength) for _ in 1:popsize]
-    return Evolution(
-        parallel,
-        mutation_strength,
-        0.05,
-        negative,
-        popsize,
-        candidates,
-        epochs,
-        Float64[],
-        20,
-        1e-5,
-    )
+    return Evolution(true, mutation_strength, popsize, candidates, simepochs)
 end
 
 function mutate!(spring_data::Vector, strength=0.1)
@@ -125,47 +104,30 @@ function single_point_crossover(can1, can2)
     return (out1, out2)
 end
 
-# TODO: enable interrupts during training without losing progress or saving worse
-# combination
 function train!(
     network::Network, epochs::Int, behaviours::Vector{T}, sim::Simulation, opt::Evolution
 ) where {T<:Behaviour}
     loss = calc_loss(network, sim, behaviours)
     spring_data = get_spring_constants_vec(network)
-    loss_function! = opt.parallel ? calc_losses_parallel! : calc_losses!
-    losses = Vector{Float64}(undef, length(opt.candidates))
 
     for _ in 1:epochs
+        # TODO: check if pop size ever changes; if no, no need to allocate new
+        # vector every time
+        losses = Vector{Float64}(undef, length(opt.candidates))
         for i in eachindex(opt.candidates)
             opt.candidates[i] = mutation(opt.candidates[i], opt.mutation_strength)
+            set_spring_data!(network, opt.candidates[i])
+            losses[i] = calc_loss(network, sim, behaviours)
         end
-        loss_function!(network, opt.candidates, losses, behaviours, sim)
 
         index = sortperm(losses)
         if losses[index[1]] < loss
             spring_data = opt.candidates[index[1]]
-            if loss - losses[index[1]] < opt.plateau_delta_max
-                opt.mutation_strength *=
-                    1.0 + Int(opt.mutation_strength_sign) * opt.mutation_strength_delta
-            end
             loss = losses[index[1]]
         else
-            opt.mutation_strength *=
-                1.0 + Int(opt.mutation_strength_sign) * opt.mutation_strength_delta
+            opt.mutation_strength *= 0.95
         end
-
-        push!(opt.loss_history, loss)
-        if (length(opt.loss_history) > opt.loss_length)
-            popfirst!(opt.loss_history)
-            if (opt.loss_history[1] - opt.loss_history[end] < opt.plateau_delta_max)
-                @info "Detected plateau! Switching sign of mutation strength delta from
-                    $(name(switch(opt.mutation_strength_sign))) to
-                    $(name(opt.mutation_strength_sign))."
-                opt.mutation_strength_sign = switch(opt.mutation_strength_sign)
-                empty!(opt.loss_history)
-            end
-        end
-        @info "Current best loss: $loss"
+        println(loss)
 
         next_gen = [zeros(length(spring_data)) for _ in 1:(opt.popsize)]
         next_gen[1:Int(floor(opt.popsize / 5))] = opt.candidates[index[1:Int(
@@ -175,10 +137,8 @@ function train!(
             opt.candidates, index, Int(ceil(opt.popsize * 0.8))
         )  # other 80% are crossover
         opt.candidates = copy(next_gen)
-        opt.epochs += 1
     end
-    set_spring_data!(network, spring_data)
-    return loss
+    return set_spring_data!(network, spring_data)
 end
 
 #TODO

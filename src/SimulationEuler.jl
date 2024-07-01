@@ -1,20 +1,10 @@
-"""
-    mutable struct Euler <: Simulation
-"""
 mutable struct Euler <: Simulation
     time::Number
     delta::Number
     showfps::Bool
     modifier::Function
 end
-"""
-    Euler(time::Number)
-
-Create an Euler simulation with given time.
-"""
-function Euler(time::Number; delta=0.025, showfps=false)
-    return Euler(time, delta, showfps, (network, delta, t) -> nothing)
-end
+Euler(time) = Euler(time, 0.025, false, (network, delta, t) -> nothing)
 
 function displacement2force(diff, spring_constant)
     if abs(diff) > 0.1
@@ -38,7 +28,9 @@ function calculate_force(network::Network, n::Int)
             displacement2force(spring.length - norm(diff), spring.spring_constant) * diff /
             norm(diff)
         if isnan.(f) != [0, 0]
-            throw("calculated force as NaN at neighboring neuron $nn")
+            throw(
+                "calculated force as NaN at neighboring neuron $nn"
+            )
         end
     end
     return f

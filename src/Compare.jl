@@ -20,8 +20,6 @@ function create_df()
         sim_time=Float64[],
         mutation_strength=Float64[],
         popsize=Int64[],
-        behaviour_type=String[],
-        num_goals_resonance=Int64[],
         loss=Float64[],
     )
 end
@@ -42,7 +40,6 @@ macro init_comp()
         columns = 4
         mag_goals = 0.1
         mag_modifier = 0.1
-        num_goals_resonance = 3
     end
     return esc(ex)
 end
@@ -51,10 +48,10 @@ macro init_net()
     ex = quote
         id = uuid1()
         Random.seed!(id.value)
-        # found through experimentation; this ensures that create_deformation_behaviours isn't caught in
+        # found through experimentation; this ensures that create_behaviours isn't caught in
         # infinite loop trying to get suffucuently distant vectors
         min_angle = num_behaviours <= 1 ? 0 : π / (num_behaviours + 0)
-        net = Network(columns, rows)
+        net = MNN.Network(columns, rows)
     end
     return esc(ex)
 end
@@ -73,14 +70,14 @@ end
 macro trainer(opt)
     ex = quote
         t = Trainer(
-            MNN.create_deformation_behaviours(
+            MNN.create_behaviours(
                 net,
                 num_behaviours;
                 min_angle=min_angle,
                 m_goal=mag_goals,
                 m_mod=mag_modifier,
             ),
-            MNN.SecondOrderDiff(sim_time),
+            MNN.Diff(sim_time),
             $opt(net),
         )
         if $opt <: MNN.Evolution
@@ -313,118 +310,31 @@ function get_start_mutation_strengths(df_e, df)
     return result
 end
 
-function resonance_test(net=nothing, t=nothing; start_epochs=0)
-    df = DataFrame(;
-        time=DateTime[],
-        epochs=Int64[],
-        amps=Vector{Float64}[],
-        net=Network[],
-        # t=Trainer[],
-        # freqs=Vector{Float64}[],
-    )
+function resonance_test(net=nothing, t=nothing)
     if net === nothing
         net = MNN.Network(11, 4)
-    else
-        net = deepcopy(net)
     end
-    foo = net.neuron_count
-    amp = 0.2
     if t === nothing
         # r = MNN.Resonance(Dict(37 => 0.0), Dict(1 => [2, 0.1], 2 => [2, 0.1], 3 => [2, 0.1]))
-        bar = 1.2
         r1 = MNN.Resonance(
-            Dict(foo - 2 => 0.3, foo - 1 => 0.3, foo => 0.3),
-            Dict(1 => [bar, amp], 2 => [bar, amp], 3 => [bar, amp]),
+            Dict(37 => 0.4), Dict(1 => [1.8, 0.1], 2 => [1.8, 0.1], 3 => [1.8, 0.1])
         )
-        bar = 2.0
         r2 = MNN.Resonance(
-            Dict(foo - 2 => 0.2, foo - 1 => 0.2, foo => 0.2),
-            Dict(1 => [bar, amp], 2 => [bar, amp], 3 => [bar, amp]),
+            Dict(37 => 0.4), Dict(1 => [0.4, 0.1], 2 => [0.4, 0.1], 3 => [0.4, 0.1])
         )
-        bar = 2.8
         r3 = MNN.Resonance(
-            Dict(foo - 2 => 0.3, foo - 1 => 0.3, foo => 0.3),
-            Dict(1 => [bar, amp], 2 => [bar, amp], 3 => [bar, amp]),
+            Dict(37 => 0.1), Dict(1 => [1, 0.1], 2 => [1, 0.1], 3 => [1, 0.1])
         )
-        t = MNN.Trainer(
-            [r1, r2, r3],
-            SecondOrderDiff(200),
-            # PPS(),
-            Evolution(net),
-        )
-        # t.optimization.initialized = true
-        t.optimization.mutation_strength = 0.1
-        t.optimization.popsize = 10
-    else
-        t = deepcopy(t)
+        t = MNN.Trainer([r1, r2, r3], Diff(150), PPS())
     end
-    freqs = 0.0:0.4:3.2
-    epochs = start_epochs
-    amps =
-        (
-            MNN.calculate_resonance_curve(net, freqs, amp, foo - 2) +
-            MNN.calculate_resonance_curve(net, freqs, amp, foo - 1) +
-            MNN.calculate_resonance_curve(net, freqs, amp, foo)
-        ) ./ 3.0
-    push!(df, (now(), epochs, amps, deepcopy(net)))
-    for i in 1:1
-        MNN.train!(net, 50, t)
-        epochs += 50
-        amps =
-            (
-                MNN.calculate_resonance_curve(net, freqs, amp, foo - 2) +
-                MNN.calculate_resonance_curve(net, freqs, amp, foo - 1) +
-                MNN.calculate_resonance_curve(net, freqs, amp, foo)
-            ) ./ 3.0
-        push!(df, (now(), epochs, amps, deepcopy(net)))
-        # push!(amps, MNN.calculate_resonance_curve(net, freqs, 0.1, 37))
-    end
-    return df, deepcopy(t), freqs
-end
-
-function resonance_test2()
-    nets = []
+    freqs = 0.0:0.2:2.2
     amps = []
-    ts = []
-    freqss = []
-    Threads.@threads for i in 1:1
-        b = MNN.Resonance(2)
-        net, amp, t, freqs = resonance_test(nothing, MNN.Trainer(b, SecondOrderDiff(500), PPS()))
-        push!(nets, net)
-        push!(amps, amp)
-        push!(ts, t)
-        push!(freqss, freqs)
+    push!(amps, MNN.calculate_resonance_curve(net, freqs, 0.1, 37))
+    for i in 1:3
+        MNN.train!(net, 100, t)
+        push!(amps, MNN.calculate_resonance_curve(net, freqs, 0.1, 37))
     end
-    return nets, amps, ts, freqss
-end
-
-function test_influence_frequency()
-    nets = []
-    amps = []
-    ts = []
-    freqss = []
-    Threads.@threads for f in 0.1:0.1:0.6
-        net = Network(11, 4)
-        b = MNN.Resonance(
-            Dict(36 => 0.2, 37 => 0.2, 38 => 0.2),
-            Dict(1 => [f, 0.1], 2 => [f, 0.1], 3 => [f, 0.1]),
-        )
-        net, amp, t, freqs = resonance_test(nothing, MNN.Trainer([b], SecondOrderDiff(500), PPS()))
-        push!(nets, net)
-        push!(amps, amp)
-        push!(ts, t)
-        push!(freqss, freqs)
-    end
-    return nets, amps, ts, freqss
-end
-
-function get_diffs(y)
-    amps = y[2]
-    for i in eachindex(amps)
-        f = 0.2 * i
-        println("Frequency: $f")
-        println("Amplitude: $(amps[i][end][i+1])")
-    end
+    return net, amps, t, freqs
 end
 
 end

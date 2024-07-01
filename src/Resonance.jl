@@ -45,26 +45,26 @@ function calc_amplitude(neuron, integ, portion)
 end
 
 #TODO: implement for Euler
-# function calc_loss(network::Network, sim::SecondOrderDiff, behaviour::Resonance)
-#     reset!(network)
-#     integ = simulate!(network, sim, behaviour)
-#     # portion of the simulation to consider (0.2 --> last 20% of the simulation)
-#     portion = round(Int, integ.t / 2)
-#     l = 0.0
-#     for (n, target_a) in behaviour.goals # neuron and target amplitude
-#         max_x = maximum(integ.sol.u[(end - portion):end]) do curr_solution
-#             positions = curr_solution.x[2]
-#             return positions[1, n] # only x component
-#         end
-#         min_x = minimum(integ.sol.u[(end - portion):end]) do curr_solution
-#             positions = curr_solution.x[2]
-#             return positions[1, n] # only x component
-#         end
-#         actual_a = (max_x - min_x) / 2 # actual amplitude
-#         l += (target_a - actual_a)^2
-#     end
-#     return l / length(behaviour.goals)
-# end
+function calc_loss(network::Network, sim::SecondOrderDiff, behaviour::Resonance)
+    reset!(network)
+    integ = simulate!(network, sim, behaviour)
+    # portion of the simulation to consider (0.2 --> last 20% of the simulation)
+    portion = round(Int, integ.t / 2)
+    l = 0.0
+    for (n, target_a) in behaviour.goals # neuron and target amplitude
+        max_x = maximum(integ.sol.u[(end - portion):end]) do curr_solution
+            positions = curr_solution.x[2]
+            return positions[1, n] # only x component
+        end
+        min_x = minimum(integ.sol.u[(end - portion):end]) do curr_solution
+            positions = curr_solution.x[2]
+            return positions[1, n] # only x component
+        end
+        actual_a = (max_x - min_x) / 2 # actual amplitude
+        l += (target_a - actual_a)^2
+    end
+    return l / length(behaviour.goals)
+end
 
 function resonate!(network::Network, acc, behaviours::Vector, t)
     for behaviour in behaviours
@@ -89,41 +89,41 @@ function find_closest_index(arr::AbstractArray, x::Number)
 end
 
 # note: te modifier frqeuencies of each Resonance behaviour need to be the same across input neurons
-function calc_loss(network::Network, sim::SecondOrderDiff, behaviours::Vector{T}) where {T<:Behaviour}
-    @info "Correct func!"
-    reset!(network)
-    sim.modifier = (network, acc, t) -> MNN.resonate!(network, acc, behaviours, t)
+# function calc_loss(network::Network, sim::SecondOrderDiff, behaviours::Vector{T}) where {T<:Behaviour}
+#     @info "Correct func!"
+#     reset!(network)
+#     sim.modifier = (network, acc, t) -> MNN.resonate!(network, acc, behaviours, t)
 
-    integ = simulate!(network, sim)
-    l = 0.0 # initialize loss
-    n_loss = 0
-    fs = 100 # sampling frequency
-    portion = 0.5 # portion of simulaiton to consider (here last 50%)
-    ts = (integ.t * portion):(1 / fs):(integ.t)
-    positions = Vector{Float64}(undef, length(ts))
-    component = 1 # x component
-    frequencies = 0
-    amplitudes = 0
-    avg_amplitudes = zeros(length(positions) ÷ 2 + 1)
-    for b in behaviours
-        frequency = (collect(values(b.modifiers)))[1][1]
-        for (neuron, target_amplitude) in b.goals
-            map!(positions, ts) do t
-                # .x[2] accesses positions, .x[1] would be velocities
-                return integ.sol(t).x[2][1, neuron]
-            end
-            frequencies = FFTW.rfftfreq(length(positions), fs)
-            # scale with length / 2 beacuse rfft --> symmetric
-            amplitudes = abs.(FFTW.rfft(positions) ./ (length(positions) / 2))
-            amplitude_index = find_closest_index(frequencies, frequency)
-            l += (amplitudes[amplitude_index] - target_amplitude)^2
-            avg_amplitudes .+= amplitudes
-            n_loss += 1
-        end
-    end
-    return l / n_loss
-    # return (frequencies, avg_amplitudes ./ n_loss)
-end
+#     integ = simulate!(network, sim)
+#     l = 0.0 # initialize loss
+#     n_loss = 0
+#     fs = 100 # sampling frequency
+#     portion = 0.5 # portion of simulaiton to consider (here last 50%)
+#     ts = (integ.t * portion):(1 / fs):(integ.t)
+#     positions = Vector{Float64}(undef, length(ts))
+#     component = 1 # x component
+#     frequencies = 0
+#     amplitudes = 0
+#     avg_amplitudes = zeros(length(positions) ÷ 2 + 1)
+#     for b in behaviours
+#         frequency = (collect(values(b.modifiers)))[1][1]
+#         for (neuron, target_amplitude) in b.goals
+#             map!(positions, ts) do t
+#                 # .x[2] accesses positions, .x[1] would be velocities
+#                 return integ.sol(t).x[2][1, neuron]
+#             end
+#             frequencies = FFTW.rfftfreq(length(positions), fs)
+#             # scale with length / 2 beacuse rfft --> symmetric
+#             amplitudes = abs.(FFTW.rfft(positions) ./ (length(positions) / 2))
+#             amplitude_index = find_closest_index(frequencies, frequency)
+#             l += (amplitudes[amplitude_index] - target_amplitude)^2
+#             avg_amplitudes .+= amplitudes
+#             n_loss += 1
+#         end
+#     end
+#     return l / n_loss
+#     # return (frequencies, avg_amplitudes ./ n_loss)
+# end
 
 function calc_res_curve(
     network::Network, sim::SecondOrderDiff, behaviours::Vector{T}

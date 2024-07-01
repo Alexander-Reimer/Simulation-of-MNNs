@@ -42,7 +42,7 @@ Random.seed!(1)
 ```
 
 ```@repl usageA
-net = Network(5, 4) # 5 columns, 4 rows
+net = TestNetwork(5, 4) # 5 columns, 4 rows
 ```
 
 **Create a deformation behaviour using a GUI:**

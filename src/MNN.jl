@@ -1,7 +1,6 @@
 module MNN
 
-export Network,
-    simulate!,
+export simulate!,
     Trainer,
     train!,
     Visualizer,
@@ -9,16 +8,16 @@ export Network,
     PPS,
     Evolution,
     get_user_behaviour,
-    SecondOrderDiff,
+    create_deformation_behaviours,
+    Diff,
     Euler,
-    Resonance,
-    Deformation,
-    create_deformation_behaviours
+    TestNetwork
 
 using AngleBetweenVectors
 using CairoMakie # visualization (pdf-capable backend)
 using DifferentialEquations
 using GLMakie # visualization (interactive backend)
+GLMakie.activate!()
 using Graphs
 using LinearAlgebra # norm, normalize
 using MetaGraphsNext
@@ -26,8 +25,6 @@ using Observables # updating visualization
 using Random # UUIDs & setting rand seed
 using StaticArrays
 using Statistics # mean
-using FFTW
-using Arrow # saving data
 # CairoMakie.activate!()
 
 """
@@ -89,7 +86,42 @@ Represents a MNN.
 - `velocities::Array{Float64,2}`: The current velocities of the neurons. Same indexing as
   `positions`.
 """
-mutable struct Network
+
+"""
+    abstract type Behaviour
+
+Abstract supertype of all behaviours the network can be optimized for. Implemented
+behaviours:
+
+TODO: Add implemented behaviours here.
+"""
+abstract type Behaviour end
+
+abstract type Optimization end
+
+abstract type Simulation end
+
+"""
+    abstract type Network
+
+Abstract supertype of all mechanical neural networks. Implemented networks:
+
+- [`MNN.TestNetwork`](@ref): Network described by Lee et al. (2022) with springs arrangd in equilateral triangles.
+- [`MNN.House`](@ref): Rough model of a house with a square layout and gravity.
+"""
+abstract type Network end
+
+"""
+    mutable struct TestNetwork <: Network
+
+Represents a MNN as described by Lee et al. (2022) with springs arranged in equilateral
+triangles. The network is initialized with
+
+```julia
+TestNetwork(columns::Int, rows::Int)
+```
+"""
+mutable struct TestNetwork <: Network
     graph::MetaGraphsNext.MetaGraph
     rows::Int # how many rows fixed columns have
     row_counts::Array{Int,1}
@@ -105,33 +137,20 @@ end
 
 include("Visualize.jl")
 
-abstract type Behaviour end
-
-abstract type Optimization end
-
-"""
-    abstract type Simulation
-
-Inherit from this type to implement your own simulation method. Your Simulation type should
-have a field `modifier::Function` (see )
-"""
-abstract type Simulation end
-
 mutable struct Trainer
-    # behaviours::Vector{T} where {T<:Behaviour} # remove to avoid serialization bug?
-    behaviours::Vector{Behaviour}
+    behaviours::Vector{T} where {T<:Behaviour}
     simulation::Simulation
     optimization::Optimization
 end
 
-function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
+function TestNetwork(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
     row_counts = Vector{Int}(undef, columns)
     col_fixed = Vector{Bool}(undef, columns)
     neuron_count = 0
     start_positions = Dict{Int,Vector{Number}}()
     positions = zeros(Float64, 0, 0)
     velocities = zeros(Float64, 0, 0)
-    return Network(
+    return TestNetwork(
         graph,
         rows,
         row_counts,
@@ -146,6 +165,7 @@ function Network(graph::MetaGraphsNext.MetaGraph, rows, columns, xdist=1.0)
     )
 end
 
+include("Earthquake.jl")
 include("SimulationDiff.jl")
 include("SimulationEuler.jl")
 include("PPSOptimizer.jl")
@@ -153,7 +173,6 @@ include("Evolution.jl")
 include("Backpropagation.jl")
 include("Resonance.jl")
 include("Deformation.jl")
-include("DataHandling.jl")
 
 function print_graph(network::Network)
     for col in 1:(network.columns)
@@ -176,13 +195,13 @@ function new_graph()
     )
 end
 
-function get_neuron_index(network::Network, column::Int, row::Int)
+function get_neuron_index(network::TestNetwork, column::Int, row::Int)
     return sum(network.row_counts[1:(column - 1)]) + row
 end
 
 # label: whether index is "true" (-> internal) index or "label" given by user at
 # definition
-function get_neuron(network::Network, index::Int; label::Bool=true)
+function get_neuron(network::TestNetwork, index::Int; label::Bool=true)
     true_index = label ? network.graph.vertex_labels[index] : index
     # Tuple of [1] index and [2] neuron
     x = network.graph.vertex_properties[true_index]
@@ -190,11 +209,11 @@ function get_neuron(network::Network, index::Int; label::Bool=true)
     return x[2]
 end
 
-function get_neuron(network::Network, column::Int, row::Int)
+function get_neuron(network::TestNetwork, column::Int, row::Int)
     return get_neuron(network, get_neuron_index(network, column, row))
 end
 
-function set_neuron_positions!(network::Network, column::Int)
+function set_neuron_positions!(network::TestNetwork, column::Int)
     xdist = network.xdist
     ydist = network.ydist
     fixed = network.col_fixed[column]
@@ -213,26 +232,26 @@ function set_neuron_positions!(network::Network, column::Int)
     end
 end
 
-function set_neuron_velocities!(network::Network, column::Int)
+function set_neuron_velocities!(network::TestNetwork, column::Int)
     for row in network.row_counts[column]
         n = get_neuron_index(network, column, row)
-        network.velocities[:, n] = [0.0, 0.0] #sollte das nicht network.velocities sein????????????????????????????????????????????????????????????????????????????????????????????????????????
+        network.velocities[:, n] = [0.0, 0.0]
     end
 end
 
-function set_neuron_velocities!(network::Network)
+function set_neuron_velocities!(network::TestNetwork)
     for n in 1:(network.neuron_count)
         network.velocities[:, n] = [0.0, 0.0]
     end
 end
 
-function set_neuron_positions!(network::Network)
+function set_neuron_positions!(network::TestNetwork)
     for col in 1:(network.columns)
         set_neuron_positions!(network, col)
     end
 end
 
-function initialize_neurons!(network::Network)
+function initialize_neurons!(network::TestNetwork)
     function add_column!(rows::Int, column::Int, fixed::Bool)
         function add_neuron!(movable::Bool)
             network.neuron_count += 1
@@ -260,7 +279,7 @@ function initialize_neurons!(network::Network)
     return set_neuron_velocities!(network)
 end
 
-function initialize_springs!(network::Network)
+function initialize_springs!(network::TestNetwork)
     function add_spring!(n1::Int, n2::Int)
         pos1 = network.positions[:, n1]
         pos2 = network.positions[:, n2]
@@ -297,7 +316,7 @@ function initialize_springs!(network::Network)
     end
 end
 
-function initialize_graph!(network::Network)
+function initialize_graph!(network::TestNetwork)
     initialize_neurons!(network)
     return initialize_springs!(network)
 end
@@ -310,9 +329,9 @@ given distance between columns on x axis.
 """
 calc_ydist(xdist) = 2 * sqrt(3) * xdist
 
-function Network(columns, rows)
+function TestNetwork(columns, rows)
     graph = new_graph()
-    network = Network(graph, rows, columns)
+    network = TestNetwork(graph, rows, columns)
     initialize_graph!(network)
     return network
 end
@@ -329,7 +348,7 @@ end
 netpush!(network, acc) = addvelocity!(network, acc, [0.1, 0])
 netpull!(network, acc) = addvelocity!(network, acc, [-0.1, 0])
 
-function loss(network::Network, behaviour::Deformation)
+function loss(network::TestNetwork, behaviour::Deformation)
     s = 0
     length(behaviour.goals) == 0 && @warn "No goals in behaviour!"
     for (neuron_i, goal_pos) in behaviour.goals
@@ -384,7 +403,7 @@ function get_spring_constants_vec(network::Network)
 end
 
 function calc_loss(
-    network::Network, sim::Simulation, behaviours::Vector{T}
+    network::TestNetwork, sim::Simulation, behaviours::Vector{T}
 ) where {T<:Behaviour}
     len = length(behaviours)
     len == 0 && throw(ArgumentError("`behaviours` can't be an empty vector"))
@@ -396,17 +415,29 @@ function calc_loss(
 end
 
 function calc_losses!(
-    network, candidates, losses, behaviours::Vector{T}, sim::Simulation
-) where {T<:Behaviour}
+    network,
+    candidates,
+    losses,
+    behaviours::Vector{Behaviour};
+    vis=nothing,
+    delta=0.01,
+    epochs=250,
+)
     for i in eachindex(losses)
         set_spring_data!(network, candidates[i])
-        losses[i] = calc_loss(network, sim, behaviours)
+        losses[i] = calc_loss(network, behaviours; vis=vis, delta=delta, epochs=epochs)
     end
 end
 
 function calc_losses_parallel!(
-    network, candidates, losses, behaviours::Vector{T}, sim::Simulation
-) where {T<:Behaviour}
+    network,
+    candidates,
+    losses,
+    behaviours::Vector{Behaviour};
+    vis=nothing,
+    delta=0.01,
+    epochs=250,
+)
     candidate_is = [i for i in eachindex(candidates)]
     chunks = Iterators.partition(
         candidate_is, max(length(candidate_is) ÷ Threads.nthreads(), 1)
@@ -414,18 +445,14 @@ function calc_losses_parallel!(
     tasks = map(chunks) do i
         if length(i) == 1
             i = i[1]
-            Threads.@spawn begin
-                local_network = deepcopy($network)
-                set_spring_data!(local_network, candidates[i])
-                calc_loss(local_network, $sim, behaviours)
-            end
+            Threads.@spawn calc_loss(
+                deepcopy($network), $(candidates[i]), behaviours, epochs=$epochs
+            )
         else
             for j in i[1]:i[2]
-                Threads.@spawn begin
-                    local_network = deepcopy($network)
-                    set_spring_data!(local_network, candidates[j])
-                    calc_loss(local_network, $sim, behaviours)
-                end
+                Threads.@spawn calc_loss(
+                    deepcopy($network), $(candidates[j]), behaviours, epochs=$epochs
+                )
             end
         end
     end
@@ -441,15 +468,70 @@ function train!(network::Network, epochs::Int, trainer::Trainer)
     )
 end
 
+function behaviour_unmoving(network::TestNetwork)
+    col = network.columns
+    rows = network.row_counts[col]
+    goals = Dict{Int,Vector{Number}}()
+    for row in 1:rows
+        neuron_i = get_neuron_index(network, col, row)
+        goals[neuron_i] = [0.0, 0.0]
+    end
+    return Behaviour(goals, true, Dict())
+end
+
+function random_distanced_vector(others, m, min_angle)
+    j = 1
+    result = [(rand() - 0.5) * m, (rand() - 0.5) * m]
+    while j <= size(others, 2)
+        α = angle(result, others[:, j])
+        if α < min_angle
+            result .= [(rand() - 0.5) * m, (rand() - 0.5) * m]
+            j = 1
+            # @info "Too close!"
+            continue
+        else
+            j += 1
+        end
+    end
+    return result
+end
+
+function create_deformation_behaviours(
+    network::TestNetwork, num::Int; min_angle=π / 3, m_goal=1, m_mod=0.1
+)
+    behaviours = Vector{Deformation}(undef, num)
+    goals = Array{Float64,3}(undef, 2, num, network.row_counts[end])
+    modifiers = Array{Float64,3}(undef, 2, num, network.row_counts[1])
+    for i in eachindex(behaviours)
+        b_goals = Dict()
+        b_modifiers = Dict()
+        for row in 1:network.row_counts[end]
+            neuron_i = get_neuron_index(network, network.columns, row)
+            neuron = get_neuron(network, neuron_i)
+            !neuron.movable && continue
+            others = goals[:, 1:(i - 1), row]
+            goals[:, i, row] .= random_distanced_vector(others, m_goal, min_angle)
+            b_goals[neuron_i] = goals[:, i, row]
+        end
+        for row in shuffle(1:network.row_counts[1])
+            neuron_i = get_neuron_index(network, 1, row)
+            neuron = get_neuron(network, neuron_i)
+            !neuron.movable && continue
+            others = modifiers[:, 1:(i - 1), row]
+            modifiers[:, i, row] .= random_distanced_vector(others, m_mod, min_angle)
+            b_modifiers[neuron_i] = modifiers[:, i, row]
+        end
+        # behaviours[i] = behaviour_unmoving(network)
+        behaviours[i] = Deformation(b_goals, true, b_modifiers)
+    end
+    return behaviours
+end
+
 """
     simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
 
-Simulate network with given behaviour. Simulation method is determined by type of `sim`;
-currently [`MNN.SecondOrderDiff`](@ref) and [`MNN.Euler`](@ref) are implemented.
-
-To implement your own, you need to define a struct that is a subtype of
-[`MNN.Simulation`](@ref) and has the field `modifier::Function`. Then overload the function
-`MNN.simulate!(network::Network, sim::YourType; vis::Union{Visualizer, Nothing} = nothing)`.
+Simulate network with given behaviour. Simulation method is determined by type of `sim`.
+TODO: Add implemented simulation methods here. Refer to page for own simulation method.
 """
 function simulate!(
     network::Network,
@@ -462,7 +544,7 @@ function simulate!(
     return simulate!(network, sim; vis=vis)
 end
 
-function nearest_neuron(x, y, net::Network)
+function nearest_neuron(x, y, net::TestNetwork)
     min_dist = Inf
     min_i = -1
     for col in [1, net.columns]
@@ -485,10 +567,10 @@ Get deformation behaviour using GUI. Left click on a neuron (first or last colum
 it, then release left mouse button and move mouse pointer to move the other end of the goal
 / force vector. Click left mouse button again to confirm.
 
-If you have set all force and goal vectors you want, press space to finish. The function
-will then return a [`MNN.Deformation`](@ref) object.
+If you have set all force and goal vectors you want, press space to finish. The function will
+then return a [`MNN.Behaviour`](@ref) object.
 """
-function get_user_behaviour(network::Network)
+function get_user_behaviour(network::TestNetwork)
     reset!(network)
     vis = Visualizer(network)
     deregister_interaction!(vis.ax, :rectanglezoom)
