@@ -1,3 +1,4 @@
+export SecondOrderDiff, FirstOrderDiff
 """
     mutable struct FirstOrderDiff <: Simulation
 """

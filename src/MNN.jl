@@ -1,7 +1,6 @@
 module MNN
 
-export
-    simulate!,
+export simulate!,
     Trainer,
     train!,
     Visualizer,
@@ -9,13 +8,16 @@ export
     PPS,
     Evolution,
     get_user_behaviour,
+    create_deformation_behaviours,
     Diff,
-    Euler
+    Euler,
+    TestNetwork
 
 using AngleBetweenVectors
-#using CairoMakie # visualization (pdf-capable backend)
+using CairoMakie # visualization (pdf-capable backend)
 using DifferentialEquations
 using GLMakie # visualization (interactive backend)
+GLMakie.activate!()
 using Graphs
 using LinearAlgebra # norm, normalize
 using MetaGraphsNext
@@ -85,15 +87,40 @@ Represents a MNN.
   `positions`.
 """
 
+"""
+    abstract type Behaviour
+
+Abstract supertype of all behaviours the network can be optimized for. Implemented
+behaviours:
+
+TODO: Add implemented behaviours here.
+"""
 abstract type Behaviour end
 
 abstract type Optimization end
 
 abstract type Simulation end
 
+"""
+    abstract type Network
+
+Abstract supertype of all mechanical neural networks. Implemented networks:
+
+- [`MNN.TestNetwork`](@ref): Network described by Lee et al. (2022) with springs arrangd in equilateral triangles.
+- [`MNN.House`](@ref): Rough model of a house with a square layout and gravity.
+"""
 abstract type Network end
 
+"""
+    mutable struct TestNetwork <: Network
 
+Represents a MNN as described by Lee et al. (2022) with springs arranged in equilateral
+triangles. The network is initialized with
+
+```julia
+TestNetwork(columns::Int, rows::Int)
+```
+"""
 mutable struct TestNetwork <: Network
     graph::MetaGraphsNext.MetaGraph
     rows::Int # how many rows fixed columns have
@@ -110,9 +137,8 @@ end
 
 include("Visualize.jl")
 
-
 mutable struct Trainer
-    behaviours::Vector{T} where T <: Behaviour
+    behaviours::Vector{T} where {T<:Behaviour}
     simulation::Simulation
     optimization::Optimization
 end
@@ -376,7 +402,9 @@ function get_spring_constants_vec(network::Network)
     return spring_constants
 end
 
-function calc_loss(network::TestNetwork, sim::Simulation, behaviours::Vector{T}) where T<:Behaviour
+function calc_loss(
+    network::TestNetwork, sim::Simulation, behaviours::Vector{T}
+) where {T<:Behaviour}
     len = length(behaviours)
     len == 0 && throw(ArgumentError("`behaviours` can't be an empty vector"))
     l = 0
@@ -468,7 +496,9 @@ function random_distanced_vector(others, m, min_angle)
     return result
 end
 
-function create_behaviours(network::TestNetwork, num::Int; min_angle=π / 3, m_goal=1, m_mod=0.1)
+function create_deformation_behaviours(
+    network::TestNetwork, num::Int; min_angle=π / 3, m_goal=1, m_mod=0.1
+)
     behaviours = Vector{Deformation}(undef, num)
     goals = Array{Float64,3}(undef, 2, num, network.row_counts[end])
     modifiers = Array{Float64,3}(undef, 2, num, network.row_counts[1])
@@ -497,19 +527,11 @@ function create_behaviours(network::TestNetwork, num::Int; min_angle=π / 3, m_g
     return behaviours
 end
 
-function Trainer(opt::Optimization, sim::Simulation, num::Int)
-    return Trainer(create_behaviours(num), sim, opt)
-end
-
 """
     simulate!(network::Network, sim::Simulation, behaviour::Behaviour; vis::Union{Visualizer,Nothing}=nothing)
 
-Simulate network with given behaviour. Simulation method is determined by type of `sim`;
-currently [`MNN.Spring`](@ref) and [`MNN.Euler`](@ref) are implemented.
-
-To implement your own, you need to define a struct that is a subtype of
-[`MNN.Simulation`](@ref) and has the field `modifier::Function`. Then overload the function
-`MNN.simulate!(network::Network, sim::YourType; vis::Union{Visualizer, Nothing} = nothing)`.
+Simulate network with given behaviour. Simulation method is determined by type of `sim`.
+TODO: Add implemented simulation methods here. Refer to page for own simulation method.
 """
 function simulate!(
     network::Network,

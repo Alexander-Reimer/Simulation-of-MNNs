@@ -1,3 +1,10 @@
+"""
+    mutable struct House <: Network
+
+Rough model of a house with a square layout and gravity. The purpose is to model earthquakes
+and analyse the effects on the "house" and effectiveness of training MNNs for earthquake /
+vibration protection.
+"""
 mutable struct House <: Network
     graph::MetaGraphsNext.MetaGraph
     rows::Int
