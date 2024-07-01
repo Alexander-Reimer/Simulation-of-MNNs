@@ -2,8 +2,8 @@ using MNN
 using Test
 
 @testset "MNN.jl" begin
-    @testset "Network" begin
-        net = Network(5, 4)
+    @testset "TestNetwork" begin
+        net = MNN.TestNetwork(5, 4)
         @test net.columns == 5
         @test net.rows == 4
         @test net.neuron_count == 17
@@ -12,7 +12,7 @@ using Test
         @test (9, MNN.get_neuron(net, 3, 2)) == net.graph.vertex_properties[9]
     end
     @testset "Deformation" begin
-        net = Network(5, 4)
+        net = MNN.TestNetwork(5, 4)
     end
     # Write your tests here.
 end
