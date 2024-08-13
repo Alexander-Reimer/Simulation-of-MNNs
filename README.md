@@ -4,6 +4,7 @@
 [![Build Status](https://github.com/alexander-reimer/Simulation-of-MNNs/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/alexander-reimer/Simulation-of-MNNs/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/alexander-reimer/Simulation-of-MNNs/branch/main/graph/badge.svg)](https://codecov.io/gh/alexander-reimer/Simulation-of-MNNs)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+[![Static Badge](https://img.shields.io/badge/Jugend%20forscht-%F0%9F%A5%87%20nationwide-red)](https://www.jugend-forscht.de/index.php?id=262&tx_smsjufoprojects_smsjufprojectdb%5Bproject%5D=7550&tx_smsjufoprojects_smsjufprojectdb%5Baction%5D=show&tx_smsjufoprojects_smsjufprojectdb%5Bcontroller%5D=Project&cHash=0d317fddb3cee8cc358da07a5834ccaf)
 
 We (Matteo Friedrich and Alexander Reimer) are currently participating in Jugend
 forscht 2024 (a German youth science competition). For our project, we needed a
