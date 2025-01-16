@@ -5,7 +5,7 @@
 [![Coverage](https://codecov.io/gh/alexander-reimer/Simulation-of-MNNs/branch/main/graph/badge.svg)](https://codecov.io/gh/alexander-reimer/Simulation-of-MNNs)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
-We (Matteo Friedrich and Alexander Reimer) are currently participating in Jugend
+We (Matteo Friedrich and Alexander Reimer) participated in Jugend
 forscht 2024 (a German youth science competition). For our project, we needed a
 library capable of simulating, optimizing and visualizing Mechanical Neural
 Networks (MNNs). Since we couldn't find one, we decided to develop and publish
