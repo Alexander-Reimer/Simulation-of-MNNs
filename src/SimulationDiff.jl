@@ -60,23 +60,21 @@ function simulation_step_first_order(du, d, p, t)
     end
 end
 
-function simulation_step_second_order(accelerations, velocities, positions, p, t)
+function simulation_step_second_order(accelerations, velocities, positions, p, t) where T
     (network, gam, modifier) = p
     # velocities = network.velocities
     # positions = network.positions
     graph = network.graph
     force = MVector{2,Float64}(undef)
     diff = MVector{2,Float64}(undef)
-    positionsn = MVector{2,Float64}(undef)
     # diff = Vector{Float64}(undef,2)
     for neuron in vertices(graph)
         if graph[neuron].movable  # is movable
             force .= [0.0, 0.0]
-            positionsn .= positions[:, neuron]
 
             for neighbor in neighbors(graph, neuron)
                 spring = graph[neighbor, neuron]
-                diff = positionsn - positions[:, neighbor]
+                diff = positions[:, neuron] - positions[:, neighbor]
                 dist = norm(diff)
                 # diff .= springforce(dist - spring.length, spring.spring_constant) .* diff / dist
                 diff *= springforce(dist - spring.length, spring.spring_constant)
