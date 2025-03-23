@@ -72,13 +72,13 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
                 vis.observers[n1, n2, :ys];
                 color=spring.spring_constant,
                 # colormap=:diverging_bkr_55_10_c35_n256,
-                colormap=[:blue, :gray, :red],
+                colormap=[:dodgerblue, :gray, :firebrick1],
                 colorrange=colorrange,
             )
         end
     end
 
-    scatter!(neuron_xs, neuron_ys; marker=:circle, color=:black)
+    scatter!(neuron_xs, neuron_ys; marker=:circle, color=:grey30)
 
     # draw thick lines for fixed rows top und bottom
     if network isa TestNetwork
@@ -116,8 +116,9 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
                 goal_y;
                 marker=:circle,
                 color=:transparent,
-                strokewidth=1,
-                strokecolor=:red,
+                strokewidth=2,
+                markersize = 10,
+                strokecolor=:green,
             )
 
             pos = @lift([$neuron_xs[n], $neuron_ys[n]])
@@ -125,28 +126,28 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
             y = @lift([$pos[2]])
             v = lift(pos) do pos
                 w = goal_pos - pos
-                # shorten the arrow by 0.15 units so the tip is in middle of the circle
-                return w - normalize(w) * 0.15
+                # shorten the arrow by 0.25 units so the tip is in middle of the circle
+                return w - normalize(w) * 0.25
             end
             vx = @lift([$v[1]])
             vy = @lift([$v[2]])
 
-            arrows!(x, y, vx, vy; color=:red)
+            arrows!(x, y, vx, vy; color=:green, linewidth=2, arrowsize=13)
         end
 
         for (n, coords) in behaviour.modifiers
             coords *= 20
-            # shorten the arrow by 0.15 units so the tip is in middle of the circle
-            start_coords = @lift([$neuron_xs[n], $neuron_ys[n]] - normalize(coords) * 0.15)
+            # shorten the arrow by 0.25 units so the tip is in middle of the circle
+            start_coords = @lift([$neuron_xs[n], $neuron_ys[n]] - normalize(coords) * 0.25)
             x = @lift([$start_coords[1]])
             y = @lift([$start_coords[2]])
             change_x, change_y = coords
 
-            arrows!(x, y, [change_x], [change_y]; color=:blue, align=:tailend)
+            arrows!(x, y, [change_x], [change_y]; color=:purple3, align=:tailend, linewidth=2, arrowsize=13)
         end
     end
     hidedecorations!(ax)
-    # resize_to_layout!(fig)
+    resize_to_layout!(fig)
     display(fig)
     return vis
 end
