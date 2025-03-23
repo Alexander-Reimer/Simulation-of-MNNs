@@ -12,6 +12,6 @@ pkgs.mkShell {
   # the julia command
   shellHook = ''
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib"
-    alias julia='LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${pkgs.julia}/lib/julia" julia'
+    alias julia='LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${pkgs.julia}/lib/julia" julia --threads=auto'
   '';
 }

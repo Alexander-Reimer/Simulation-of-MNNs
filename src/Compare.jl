@@ -34,8 +34,8 @@ macro init_comp()
             CSV.write(io, df)
         end
         num_behaviours = 1
-        epochs = 1000
-        sim_time = 1000
+        epochs = 500
+        sim_time = 500
         rows = 5
         columns = 4
         mag_goals = 0.1
@@ -50,8 +50,9 @@ macro init_net()
         Random.seed!(id.value)
         # found through experimentation; this ensures that create_behaviours isn't caught in
         # infinite loop trying to get suffucuently distant vectors
-        min_angle = num_behaviours <= 1 ? 0 : π / (num_behaviours + 0)
-        net = MNN.Network(columns, rows)
+        min_angle = π / 3
+        # min_angle = num_behaviours <= 1 ? 0 : π / (num_behaviours + 0)
+        net = MNN.TestNetwork(columns, rows)
     end
     return esc(ex)
 end
@@ -70,19 +71,21 @@ end
 macro trainer(opt)
     ex = quote
         t = Trainer(
-            MNN.create_behaviours(
+            MNN.create_deformation_behaviours(
                 net,
                 num_behaviours;
                 min_angle=min_angle,
                 m_goal=mag_goals,
                 m_mod=mag_modifier,
             ),
-            MNN.Diff(sim_time),
+            MNN.SecondOrderDiff(sim_time),
             $opt(net),
         )
         if $opt <: MNN.Evolution
             t.optimization.mutation_strength = 0.01
             t.optimization.popsize = 10
+        else
+            allowmissing!(df, [:mutation_strength, :popsize])
         end
     end
     return esc(ex)
@@ -159,7 +162,7 @@ function num_behaviours(opt_type)
     name = "$(typename(opt_type))NumBehaviours"
     @init_comp
     max_num_behaviours = 4
-    @sync for num_behaviours in 1:max_num_behaviours, _ in 1:3
+    @sync for num_behaviours in 1:max_num_behaviours, _ in 1:4
         Threads.@spawn begin
             @init_net()
             @info "Created network!"
