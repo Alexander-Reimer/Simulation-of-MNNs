@@ -60,7 +60,7 @@ function simulation_step_first_order(du, d, p, t)
     end
 end
 
-function simulation_step_second_order(accelerations, velocities, positions, p, t) where T
+function simulation_step_second_order(accelerations, velocities, positions, p, t)
     (network, gam, modifier) = p
     # velocities = network.velocities
     # positions = network.positions
@@ -88,7 +88,6 @@ function simulation_step_second_order(accelerations, velocities, positions, p, t
             # accelerations[2,v] = f[2]
         end
     end
-
     return modifier(network, accelerations, t)
 end
 
@@ -128,28 +127,29 @@ function simulate!(
     )
 
     if vis === nothing
-        integrator = init(prob, AutoTsit5(Rosenbrock23()))
+        sol = solve(prob, AutoTsit5(Rosenbrock23());)
+        network.velocities = sol.u[end].x[1]
+        network.positions = sol.u[end].x[2]
+        return sol
     else
         integrator = init(prob, AutoTsit5(Rosenbrock23()))
-    end
-    for integ in integrator
-        if vis !== nothing
-            network.positions = integ.sol.u[end].x[2]
-            update_positions!(vis, network)
-            # @info "t: $(integ.t)"
-            sleep(integ.dt / 100)
+        for integ in integrator
+            if vis !== nothing
+                network.positions = integ.sol.u[end].x[2]
+                update_positions!(vis, network)
+                sleep(integ.dt / 100)
+            end
+            # TODO: maximum?
+            mean_pos_change =
+                sum(abs, integ.u.x[2] .- integ.uprev.x[2]) / length(integ.u.x[2])
+            mean_velocity = sum(abs, integ.u.x[1]) / length(integ.u.x[1])
+            if integ.t > 5 && mean_pos_change < 1e-3 && mean_velocity < 1e-3
+                @info "Early break at: $(integ.t)s"
+                break
+            end
         end
-        # TODO: maximum?
-        mean_pos_change = sum(abs, integ.u.x[2] .- integ.uprev.x[2]) / length(integ.u.x[2])
-        mean_velocity = sum(abs, integ.u.x[1]) / length(integ.u.x[1])
-        if integ.t > 5 && mean_pos_change < 1.5e-5 && mean_velocity < 1.5e-5
-            # @info "Early break at: $(integ.t)s"
-            break
-        end
+        network.velocities = integrator.sol.u[end].x[1]
+        network.positions = integrator.sol.u[end].x[2]
+        return integrator
     end
-    if (integrator.t == sim.time)
-        # @warn "Simulation did not reach steady state!"
-    end
-    network.positions = integrator.sol.u[end].x[2]
-    return integrator
 end
