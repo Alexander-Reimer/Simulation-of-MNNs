@@ -4,7 +4,7 @@ mutable struct Deformation <: Behaviour
     modifiers::Dict{Int,Vector{Number}}
 end
 
-function addvelocity!(network::Network, acc::Matrix, modifiers)
+function addvelocity!(network::Network, acc, modifiers)
     #TODO: check if neurons movable
     for (n, m) in modifiers
         acc[:, n] += m

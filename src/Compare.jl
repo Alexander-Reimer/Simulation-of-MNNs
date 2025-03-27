@@ -34,7 +34,7 @@ macro init_comp()
             CSV.write(io, df)
         end
         num_behaviours = 1
-        epochs = 500
+        epochs = 200
         sim_time = 500
         rows = 5
         columns = 4
