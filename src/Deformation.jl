@@ -24,6 +24,5 @@ function simulate!(
     vis::Union{Visualizer,Nothing}=nothing,
 )
     sim.modifier = (network, acc, t) -> addvelocity!(network, acc, behaviour.modifiers)
-    simulate!(network, sim; vis=vis)
-    return nothing
+    return simulate!(network, sim; vis=vis)
 end
