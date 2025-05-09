@@ -74,6 +74,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
                 # colormap=:diverging_bkr_55_10_c35_n256,
                 colormap=[:dodgerblue, :gray, :firebrick1],
                 colorrange=colorrange,
+                linewidth=1.8,
             )
         end
     end
@@ -102,7 +103,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
                 [neuron_xs.val[n1], neuron_xs.val[n2]],
                 [neuron_ys.val[n1], neuron_ys.val[n2]];
                 color=:black,
-                linewidth=3,
+                linewidth=3.3,
             )
         end
     end
@@ -115,10 +116,8 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
                 goal_x,
                 goal_y;
                 marker=:circle,
-                color=:transparent,
-                strokewidth=2,
-                markersize = 10,
-                strokecolor=:green,
+                color=:green,
+                markersize = 12,
             )
 
             pos = @lift([$neuron_xs[n], $neuron_ys[n]])
@@ -132,7 +131,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
             vx = @lift([$v[1]])
             vy = @lift([$v[2]])
 
-            arrows!(x, y, vx, vy; color=:green, linewidth=2, arrowsize=13)
+            arrows!(x, y, vx, vy; color=:green, linewidth=2.5, arrowsize=13)
         end
 
         for (n, coords) in behaviour.modifiers
@@ -143,7 +142,7 @@ function Visualizer(network::Network; max_fps::Number=10, behaviour=nothing)
             y = @lift([$start_coords[2]])
             change_x, change_y = coords
 
-            arrows!(x, y, [change_x], [change_y]; color=:purple3, align=:tailend, linewidth=2, arrowsize=13)
+            arrows!(x, y, [change_x], [change_y]; color=:purple3, align=:tailend, linewidth=2.5, arrowsize=13)
         end
     end
     hidedecorations!(ax)

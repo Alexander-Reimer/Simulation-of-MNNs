@@ -84,12 +84,6 @@ function simulation_step_first_order(du, d, p, t)
                 force += diff / dist
             end
             force -= gam * velocities[:, neuron] # damping
-            force[2] -= 0.05 #gravity
-            # prevent neurons from going below ground
-            if positions[2, neuron] < 1.0
-                force[2] = 0.0
-                du[2, neuron, 1] = 0.0
-            end
             du[:, neuron, 2] = force
         end
     end
