@@ -131,20 +131,28 @@ function simulate!(
     u = cat(network.positions, zeros(size(network.positions)); dims=(3))
     prob = ODEProblem(simulation_step_first_order, u, tspan, p)
     if vis === nothing
-        sol = solve(prob, AutoTsit5(Rosenbrock23());)
+        sol = solve(prob)
+        network.positions = sol.u[end][:, :, 1]
+        network.velocities = sol.u[end][:, :, 2]
+        return sol
     else
-        integrator = init(prob, AutoTsit5(Rosenbrock23()))
-        # sol = solve(prob)
+        integrator = init(prob)
         for integ in integrator
-            if vis !== nothing
-                network.positions = integ.sol.u[end][:, :, 1]
-                update_positions!(vis, network)
-                # @info "t: $(integ.t)"
-                sleep(integ.dt / 100)
+            network.positions = integ.sol.u[end][:, :, 1]
+            network.velocities = integ.sol.u[end][:, :, 2]
+            previous_positions = integ.uprev[:, :, 1]
+            update_positions!(vis, network)
+            sleep(integ.dt / 100)
+            # TODO: maximum?
+            mean_pos_change =
+                sum(abs, network.positions .- previous_positions) / length(network.positions)
+            mean_velocity = sum(abs, network.velocities) / length(network.velocities)
+            if integ.t > 5 && mean_pos_change < 1e-2 && mean_velocity < 1e-3
+                @info "Early break at: $(integ.t)s"
+                break
             end
         end
-        # network.positions = integrator.sol.u[end].x[2]
-        return integrator
+
     end
 end
 
