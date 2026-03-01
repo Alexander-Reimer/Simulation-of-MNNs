@@ -4,7 +4,7 @@
 
 pkgs.mkShell {
   buildInputs = [ ];
-  nativeBuildInputs = with pkgs; [ julia ];
+  nativeBuildInputs = with pkgs; [ julia_111 ];
   # load correct (current) project environment automatically
   JULIA_PROJECT = "@.";
   # adding julia lib path to "global" LD_LIBRARY_PATH causes issues as those
@@ -12,6 +12,6 @@ pkgs.mkShell {
   # the julia command
   shellHook = ''
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib"
-    alias julia='LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${pkgs.julia}/lib/julia" julia --threads=auto'
+    alias julia='LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${pkgs.julia_111}/lib/julia" julia --threads=auto'
   '';
 }
