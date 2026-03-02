@@ -215,6 +215,6 @@ function simulate!(
         end
         network.velocities = integrator.sol.u[end].x[1]
         network.positions = integrator.sol.u[end].x[2]
-        return integrator
+        return integrator.sol
     end
 end

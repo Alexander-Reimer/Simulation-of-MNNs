@@ -47,16 +47,16 @@ end
 #TODO: implement for Euler
 function calc_loss(network::Network, sim::SecondOrderDiff, behaviour::Resonance)
     reset!(network)
-    integ = simulate!(network, sim, behaviour)
+    sol = simulate!(network, sim, behaviour)
     # portion of the simulation to consider (0.2 --> last 20% of the simulation)
-    portion = round(Int, integ.t / 2)
+    portion = round(Int, sol.t[end] / 2)
     l = 0.0
     for (n, target_a) in behaviour.goals # neuron and target amplitude
-        max_x = maximum(integ.sol.u[(end - portion):end]) do curr_solution
+        max_x = maximum(sol.u[(end - portion):end]) do curr_solution
             positions = curr_solution.x[2]
             return positions[1, n] # only x component
         end
-        min_x = minimum(integ.sol.u[(end - portion):end]) do curr_solution
+        min_x = minimum(sol.u[(end - portion):end]) do curr_solution
             positions = curr_solution.x[2]
             return positions[1, n] # only x component
         end
