@@ -3,7 +3,7 @@ mutable struct Resonance <: Behaviour
     modifiers::Dict{Int,Vector{Float64}}
 end
 
-function Resonance(net::Network, num_goals; amplitude=0.2, min_frq=0, max_frq=3)
+function Resonance(net::Network, num_goals; amplitude=0.2, min_frq=0.1, max_frq=3/(4π^2))
     b = Vector{Resonance}()
     for i in 1:num_goals
         r = rand() / 5
